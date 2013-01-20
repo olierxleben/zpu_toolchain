@@ -19,3 +19,11 @@ Dokumentation
 =============
 
 Für Github und co trotzdem Doxygen? 
+
+Repository - Struktur
+=====================
+
+lib intel hex -> eigenes Repo
+lib zpu -> eigenes Repo
+
+hwstp_homework -> eigenes Repo mit libs als externe Repositories
