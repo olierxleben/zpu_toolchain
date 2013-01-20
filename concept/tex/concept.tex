@@ -1,0 +1,218 @@
+\documentclass[10pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[german]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usetheme{Rochester}
+\useinnertheme{rectangles}
+\useoutertheme{default}
+
+\lstset{
+	basicstyle=\small\ttfamily,
+	keywordstyle=\color{blue},
+	showstringspaces=true}
+
+\title{Entwicklung eines Treibers und Toolchain zur Administration eines Embedded ZPU-Systems}
+\author{Oliver Erxleben\\Martin Helmich}
+\institute{Hochschule Osnabrück}
+\date{\today}
+
+\setitemize{label=\usebeamerfont*{itemize item}%
+  \usebeamercolor[fg]{itemize item}
+  \usebeamertemplate{itemize item}}
+
+\begin{document}
+	\frame{\titlepage}
+	
+	\begin{frame}{Grundideen}
+		\begin{itemize}
+			\item Aufteilung des Projekts in unabhängige Module, Bibliotheken und Anwendungen.
+			\item Parsing der Intel HEX-Dateien und Kommunikation mit dem ZPU-Treiber in jeweils eigene Bibliotheken, die dann aus Anwendungen heraus genutzt werden.
+			\item Die erstellten Bibliotheken sind anwendungsunabhängig und können später auch in Drittanwendungen verwendet werden.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Architekturentwurf (1)}
+		\begin{center}
+			\begin{tikzpicture}
+				\usetikzlibrary{positioning}
+				\tikzstyle{node}=[anchor=mid,text centered,minimum height=2em];
+				\tikzstyle{app}=[draw,fill=green!50,rectangle]
+				\tikzstyle{lib}=[draw,fill=yellow!50,rectangle]
+				\tikzstyle{dri}=[draw,fill=red!50,rectangle]
+				
+				\draw [lib] (6,0.5) rectangle +(2,0.75) node [node,midway] {libzpu};
+				\draw [lib] (4cm-2pt,0.5) rectangle +(2,0.75) node [node,midway] {libintelhex};
+				
+				\draw [dri] (0,-0.5) rectangle +(8,-0.75) node [node,midway] {modzpu};
+				\draw [app] (6,2) rectangle +(2,0.75) node [node,midway] {zpuio};
+				\draw [app] (4cm-2pt,2) rectangle +(2,0.75) node [node,midway] {zpuload};
+					
+				\draw [dashed] (0,0) -- (8,0);
+				\draw [->] (7,0.5) -- (7,-0.5);
+				\draw [->] (7,2) -- (7,1.25);
+				\draw [->] (5,2) -- (5,1.25);
+				\draw [->] (5.5,2) -- (6.5,1.25);
+				
+				\node [anchor=west] at (0,2.375) {Userspace-Programme};
+				\node [anchor=west] at (0,0.875) {Bibliotheken};
+			\end{tikzpicture}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Architekturentwurf (2)}
+		\textbf{Kernel-Ebene:}
+		\begin{itemize}
+			\item Das Kernel-Modul \texttt{zpu} stellt \texttt{mmap}-, \texttt{read}-, \texttt{write}- und \texttt{ioctl}-\textbf{Systemaufrufe} zur Verfügung.
+		\end{itemize}
+		\textbf{Userspace-Bibliotheken:}
+		\begin{itemize}
+			\item Die Bibliothek \texttt{libzpu} stellt Funktionen zur Verfügung, um in Anwenderprogrammen vom Zugriff auf diese Systemaufrufe zu \textbf{abstrahieren}.
+			\item Die Bibliothek \texttt{libintelhex} stellt Funktionen zum \textbf{Parsen von Intel HEX-Dateien} zur Verfügung.
+		\end{itemize}
+		\textbf{Userspace-Programme:}
+		\begin{itemize}
+			\item Das Programm \texttt{zpuio} kann \textbf{Eingaben} an die ZPU leiten und deren \textbf{Ausgabe} verarbeiten.
+			\item Das Programm \texttt{zpuload} kann Intel HEX-Dateien lesen und \textbf{in die ZPU laden}.
+		\end{itemize}
+	\end{frame}
+	
+	
+	\begin{frame}{Das \texttt{zpu}-Modul: Ein- und Ausgabe}
+		\begin{center}
+			\begin{tikzpicture}
+				\usetikzlibrary{positioning}
+				\tikzstyle{pci}=[draw,fill=green!50,rectangle]
+				\tikzstyle{krn}=[draw,fill=yellow!50,rectangle]
+				
+				\draw [fill=green!20] (0,-0.5) rectangle +(8,2.5);
+				\draw [fill=yellow!20] (0,2.5) rectangle +(8,2.5);
+				
+				%\draw [<->] (1.8,0.9) -- (5,0.9);
+				%\draw [<->] (3.8,1.1) -- (5,1.1);
+				\draw [<->,dotted] (6,1.5) -- (6,3);
+				
+				\draw [<->,dotted] (1,0.2) -- (1,-0.2) -- (6.1,-0.2) -- (6.1,0.5);
+				\draw [<->,dotted] (3,0.2) -- (3,-0) -- (5.9,0) -- (5.9,0.5);
+				
+				\draw [<->,dotted] (3.2,4.3) -- (3.2,4.5) -- (5.9,4.5) -- (5.9,4);
+				\draw [<->,dotted] (1.2,4.3) -- (1.2,4.7) -- (6.1,4.7) -- (6.1,4);
+				
+				%\draw [<->] (1.8,3.4) -- (5,3.4);
+				%\draw [<->] (3.8,3.6) -- (5,3.6);
+				
+				\node [anchor=north east] at (8,-0.5) {PCI-Hardware};
+				\node [anchor=south east] at (8, 5.0) {Kernel};
+				
+				\draw [pci] (0.2,0.2) rectangle +(1.6,1.6) node [align=left,midway] {Eingabe-\\FIFO\\(\texttt{stdin})};
+				\draw [pci] (2.2,0.2) rectangle +(1.6,1.6) node [midway,align=left] {Ausgabe-\\FIFO\\(\texttt{stdout})};
+					
+				\draw [krn] (0.2,2.7) rectangle +(1.6,1.6) node [midway,align=left] {Eingabe-\\FIFO};
+				\draw [krn] (2.2,2.7) rectangle +(1.6,1.6) node [midway,align=left] {Ausgabe-\\FIFO};
+				
+				\draw [->] (1,2.7) -- (1,1.8);
+				\draw [<-] (3,2.7) -- (3,1.8);
+				
+				\draw [->] (1,5.5) -- (1,4.3);
+				\draw [<-] (3,5.5) -- (3,4.3);
+				\node [anchor=south] at (3,5.5) {\texttt{read()}};
+				\node [anchor=south] at (1,5.5) {\texttt{write()}};
+				
+				\draw [pci] (5,0.5) rectangle +(2,1) node [align=left,midway] {Interrupt-\\Controller};
+				\draw [krn] (5,3) rectangle +(2,1) node [midway] {IRQ-Handler};
+			\end{tikzpicture}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Das \texttt{zpu}-Modul: Ein- und Ausgabe}
+	\begin{columns}
+		\column{0.5\textwidth}
+		\begin{itemize}
+			\item Die \texttt{write}-Methode schreibt Daten in den Puffer (FIFO) des Moduls.
+			\item Anschließend gibt sie den Empfangs-Interrupt (aus ZPU-Sicht) frei und legt sich (ggf.) schlafen.
+			\item Der Empfangs-IR-Handler schreibt so viele Daten wie möglich in den \texttt{stdin}-Puffer der ZPU und weckt eventuell schlafende Schreibprozesse auf.
+		\end{itemize}
+		\column{0.5\textwidth}
+		\begin{itemize}
+			\item Die \texttt{read}-Methode liest Daten aus dem Puffer (FIFO) des Moduls und gibt ggf. den Sende-IR-Handler wieder frei.
+			\item Sollte der Puffer leer sein, legt sich die \texttt{read}-Methode (ggf.) schlafen.
+			\item Der Sende-IR-Handler (aus ZPU-Sicht) liest so viele Daten wie möglich aus dem \texttt{stdout}-Puffer der ZPU in den Puffer des Moduls und weckt eventuell schlafende Leseprozesse auf.
+		\end{itemize}
+	\end{columns}
+	\end{frame}
+	
+	\begin{frame}{Die \texttt{libzpu}-Bibliothek}
+	
+		Die \texttt{libzpu}-Bibliothek soll im Userspace stark abstrahierte Methoden zur Steuerung der ZPU zur Verfügung stellen. Unterstützte Funktionen sind das \textbf{Laden neuer Programme} und \textbf{Ein- und Ausgabebehandlung}.
+		
+		Die Methoden werden in \texttt{zpu.h} definiert.
+		
+		\begin{description}[style=nextline,font=\ttfamily\bfseries]
+			\item[int zpu\_from\_hexfile(char* filename)] Lädt ein ZPU-Programm aus einer Intel HEX-Datei in die ZPU. Liefert im Erfolgsfall \texttt{0} zurück. 
+			\item[int zpu\_from\_binfile(char* filename)]
+			Wie oben, nur aus einer Binärdatei.
+			\item[int zpu\_read(char* buf, int n, int blk)]
+			Liest \texttt{n} Zeichen aus der \textbf{Standardausgabe} der ZPU. \texttt{blk} steuert, ob der Zugriff blockieren soll.
+			\item[int zpu\_write(char* buf, int n)]
+			Schreibt \texttt{n} Zeichen aus \texttt{buf} auf die \textbf{Standardeingabe} der ZPU.
+		\end{description}
+	\end{frame}
+	
+	\begin{frame}{Die \texttt{libintelhex}-Bibliotek}
+		Die \texttt{libintelhex}-Bibliothek stellt Methoden zum Einlesen von Intel HEX-Dateien zur Verfügung.
+		
+		\begin{description}[style=nextline,font=\ttfamily\bfseries]
+			\item[struct *ihex\_records ihex\_from\_file(char* filename)]
+			Liest Binärdaten aus einer Dateieingabe ein.
+			\item[struct *ihex\_records ihex\_from\_str(char* input)]
+			Liest Binärdaten aus einer Zeichenkette ein.
+			\item[int ihex\_copy(struct *ihex\_records rec, void* dst)]
+			Kopiert Daten an eine beliebige (durch \texttt{dst}) angegebene Position.
+		\end{description}
+	\end{frame}
+	
+	\begin{frame}[fragile]{Die \texttt{libintelhex}-Bibliotek}
+		\begin{lstlisting}[language=C]
+typedef struct ihex_record {
+    unsigned int ihr_length;
+    ihex_rtype_t ihr_type;     // enum {...}
+    ihex_addr_t  ihr_address;  // uint16
+    ihex_rdata_t ihr_data;     // uint8*
+    ihex_rchks_t ihr_checksum; // uint8
+} ihex_record_t;
+
+typedef struct ihex_records {
+    unsigned int ihrs_count;
+    ihex_record_t *ihrs_records;
+} ihex_records_t;
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}{Vorgehen}
+		\begin{itemize}
+			\item Testgetriebene Entwicklung der Bibliotheken und Anwenderprogramme (z.B. mit CUnit\footnote{\url{http://cunit.sourceforge.net/}})
+			\item Erstellung portabler Build-Skripte mit \texttt{autoscan} und \texttt{autoconf}.\footnote{\url{http://www.gnu.org/software/autoconf/}}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{Would-Be-Nice-Ideen}
+		\begin{itemize}
+			\item Laden der ZPU mit initialem Programm beim Booten.
+			\item Freigabe einzelner Komponenten (\texttt{libintelhex}) als OSS?
+			\item Portable Build-Skripte (evtl. mit \texttt{automake} und \texttt{autoconf}).
+			\item Paketierung (DEB oder RPM) zur einfachen Verteilung und Installation
+			\item Manpages
+			\item Python-Bindings für die erstellten Bibliotheken?
+			\item Automatisches Erstellen von Gerätedateien mit \texttt{udev}.\footnote{\url{http://mohammadthalif.wordpress.com/2010/01/02/udev-rules-to-create-a-dev-node-when-inserting-a-module/}}
+			\item Intel HEX-Dateien mit 32 statt 16 Bit.
+			\item To be continued...
+		\end{itemize}
+	\end{frame}
+\end{document}
