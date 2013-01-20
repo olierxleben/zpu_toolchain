@@ -1,0 +1,3 @@
+[submodule "lib/libcintelhex"]
+	path = lib/libcintelhex
+	url = git@github.com:martin-helmich/libcintelhex.git
