@@ -21,3 +21,7 @@
 *.aux
 *.toc
 *.snm
+*.nav
+*.synctex.gz
+*.vrb
+*.nav
