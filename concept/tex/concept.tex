@@ -9,6 +9,8 @@
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage[german,lined]{algorithm2e}
+\usepackage{float}
 
 \usetheme{Rochester}
 \useinnertheme{rectangles}
@@ -148,6 +150,68 @@
 	\end{columns}
 	\end{frame}
 	
+	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Öffnen und Schließen}{(C-naher Pseudocode)}
+		\begin{lstlisting}[language=C]
+		static void open(/* ... */)
+		{
+		    down(&semaphore);
+		}
+		
+		static void close(/* ... */)
+		{
+		    up(&semaphore);
+		}
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Lesen und Schreiben}{(C-naher Pseudocode)}
+		\begin{lstlisting}[language=C]
+static void read(/* ... */)
+{
+    if (local_rfifo_empty())
+    {
+        if (blocking)
+        {
+            enable_read_interrupt();
+            wait_for_event(local_rfifo_empty() == 0);
+        }
+        else return -EAGAIN;
+    }
+		    
+    copy_local_rfifo_to_user(/*...*/);
+    enable_read_interrupt();
+		    
+    return read_bytes;
+}
+		\end{lstlisting}
+	\end{frame}
+		
+	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Lesen und Schreiben}{(C-naher Pseudocode)}
+		\begin{lstlisting}[language=C,basicstyle=\footnotesize\ttfamily]
+static void write(/* ... */)
+{
+    if (local_wfifo_full())
+    {
+        if (blocking)
+        {
+            wait_for_event(local_wfifo_full() == 0);
+        }
+        else return -EAGAIN;
+    }
+		    
+    copy_local_wfifo_from_user(...);
+    enable_write_interrupt();
+		    
+    // Warten, bis wirklich in STDIN geschrieben wurde?
+    if (blocking)
+    {
+    	wait_for_event(all_copied_to_pci());
+    }
+    return written_bytes;
+}
+		\end{lstlisting}
+	\end{frame}
+	
 	\begin{frame}{Die \texttt{libzpu}-Bibliothek}
 	
 		Die \texttt{libzpu}-Bibliothek soll im Userspace stark abstrahierte Methoden zur Steuerung der ZPU zur Verfügung stellen. Unterstützte Funktionen sind das \textbf{Laden neuer Programme} und \textbf{Ein- und Ausgabebehandlung}.
@@ -165,20 +229,20 @@
 		\end{description}
 	\end{frame}
 	
-	\begin{frame}{Die \texttt{libintelhex}-Bibliotek}
+	\begin{frame}{Die \texttt{libintelhex}-Bibliotek: API}
 		Die \texttt{libintelhex}-Bibliothek stellt Methoden zum Einlesen von Intel HEX-Dateien zur Verfügung.
 		
 		\begin{description}[style=nextline,font=\ttfamily\bfseries]
-			\item[struct *ihex\_records ihex\_from\_file(char* filename)]
+			\item[struct *ihex\_recordset ihex\_rs\_from\_file(char* filename)]
 			Liest Binärdaten aus einer Dateieingabe ein.
-			\item[struct *ihex\_records ihex\_from\_str(char* input)]
+			\item[struct *ihex\_recordset ihex\_rs\_from\_str(char* input)]
 			Liest Binärdaten aus einer Zeichenkette ein.
-			\item[int ihex\_copy(struct *ihex\_records rec, void* dst)]
-			Kopiert Daten an eine beliebige (durch \texttt{dst}) angegebene Position.
+			\item[int ihex\_mem\_copy(struct *ihex\_records rec, void* dst, uint\_t l)]
+			Kopiert Daten an eine beliebige (durch \texttt{dst}) angegebene Position. \texttt{l} ist die Größe des Ziel-Speicherbereichs.
 		\end{description}
 	\end{frame}
 	
-	\begin{frame}[fragile]{Die \texttt{libintelhex}-Bibliotek}
+	\begin{frame}[fragile]{Die \texttt{libintelhex}-Bibliotek: Datenstrukturen}
 		\begin{lstlisting}[language=C]
 typedef struct ihex_record {
     unsigned int ihr_length;
@@ -188,18 +252,57 @@ typedef struct ihex_record {
     ihex_rchks_t ihr_checksum; // uint8
 } ihex_record_t;
 
-typedef struct ihex_records {
-    unsigned int ihrs_count;
-    ihex_record_t *ihrs_records;
+typedef struct ihex_recordset {
+    unsigned int   ihrs_count;
+    ihex_record_t* ihrs_record;
 } ihex_records_t;
 		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}{Die \texttt{libintelhex}-Bibliothek: Datenstrukturen}
+	\begin{center}
+		\begin{tikzpicture}
+			\usetikzlibrary{arrows}
+			\tikzstyle{attr}=[midway,text width=3.3cm,text height=0.3cm]
+			\tikzstyle{green}=[fill=green!20]
+			\tikzstyle{yellow}=[fill=yellow!20]	
+			
+			\draw [fill=green!50] (0,0) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_recordset\_t}};
+			\draw [green] (0,-0.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihrs\_count} = 2};
+			\draw [green] (0,-1) rectangle +(3.5,0.5) node [attr] {\texttt{ihrs\_records} = };
+			
+			\draw [fill=yellow!50] (0,-2) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_record\_t}};
+			\draw [yellow] (0,-2.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_length} = 4};
+			\draw [yellow] (0,-3) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_type} = 0x00};
+			\draw [yellow] (0,-3.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_addr} = 0x00};
+			\draw [yellow] (0,-4) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_data} = };
+			
+			\draw [fill=yellow!50] (3.5,-2) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_record\_t}};
+			\draw [yellow] (3.5,-2.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_length} = 6};
+			\draw [yellow] (3.5,-3) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_type} = 0x00};
+			\draw [yellow] (3.5,-3.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_addr} = 0x04};
+			\draw [yellow] (3.5,-4) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_data} = };
+			
+			\draw[*->] (3,-0.7) -- (3,-1.5);
+			\draw[*->] (2.5,-3.7) -- (2.5,-4.5) -- (0.75/2, -4.5) -- (0.75/2,-5);
+			\draw[*->] (6,-3.7) -- (6,-4.5) -- (3.5+0.75/2, -4.5) -- (3.5+0.75/2,-5);
+			
+			\foreach \x in {0,0.75,1.5,2.25}{
+				\draw (\x, -5.5) rectangle +(0.75,0.5) node [attr,text width=0.7cm] {0x00};
+			};
+			
+			\foreach \x in {3.5,4.25,5,5.75,6.5,7.25}{
+				\draw (\x, -5.5) rectangle +(0.75,0.5) node [attr,text width=0.7cm] {0x00};
+			};
+		\end{tikzpicture}
+		\end{center}
 	\end{frame}
 	
 	\begin{frame}{Vorgehen}
 		\begin{itemize}
 			\item Testgetriebene Entwicklung der Bibliotheken und Anwenderprogramme (z.B. mit CUnit\footnote{\url{http://cunit.sourceforge.net/}})
 			\item Erstellung portabler Build-Skripte mit \texttt{autoscan} und \texttt{autoconf}.\footnote{\url{http://www.gnu.org/software/autoconf/}}
-			\item Zentrale Verwaltung auf Github, transparente Entwicklung
+			\item Git\footnote{\url{http://git-scm.com/}} als Versionskontrollsystem. Zentrale Verwaltung auf Github, transparente Entwicklung
 		\end{itemize}
 	\end{frame}
 	
