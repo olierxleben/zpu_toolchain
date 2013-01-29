@@ -150,6 +150,13 @@
 	\end{columns}
 	\end{frame}
 	
+	\begin{frame}{Das \texttt{zpu}-Modul: Ein- und Ausgabe}{Offene Punkte}
+		\begin{itemize}
+			\item Bei blockierendem Schreibzugriff: Blockieren, bis Daten in Software-FIFO geschrieben, oder sogar bis in Hardware-FIFO geschrieben?
+			\item Mehrfaches Öffnen erlauben? Nur einmal zum Lesen und Schreiben, oder einmal zum Schreiben und mehrfach zum Lesen, oder je einmal zum Lesen und zum Schreiben?
+		\end{itemize}
+	\end{frame}
+	
 	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Öffnen und Schließen}{(C-naher Pseudocode)}
 		\begin{lstlisting}[language=C]
 		static void open(/* ... */)
@@ -172,14 +179,14 @@ static void read(/* ... */)
     {
         if (blocking)
         {
-            enable_read_interrupt();
+            enable_write_interrupt();
             wait_for_event(local_rfifo_empty() == 0);
         }
         else return -EAGAIN;
     }
 		    
     copy_local_rfifo_to_user(/*...*/);
-    enable_read_interrupt();
+    enable_write_interrupt();
 		    
     return read_bytes;
 }
@@ -200,12 +207,12 @@ static void write(/* ... */)
     }
 		    
     copy_local_wfifo_from_user(...);
-    enable_write_interrupt();
+    enable_read_interrupt();
 		    
     // Warten, bis wirklich in STDIN geschrieben wurde?
     if (blocking)
     {
-    	wait_for_event(all_copied_to_pci());
+        wait_for_event(all_copied_to_pci());
     }
     return written_bytes;
 }
