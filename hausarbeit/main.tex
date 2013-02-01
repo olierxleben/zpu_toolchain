@@ -1,0 +1,130 @@
+%
+%
+\documentclass[11pt]{scrartcl}
+
+% own geometry
+%\usepackage[a4paper, left=3cm, right=3cm]{geometry}
+
+\usepackage[ngerman]{babel} 
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{jurabib}
+\usepackage{hyperref}
+
+\include{lib/jurabib}
+\bibliographystyle{jurabib}
+
+% setup of source code listings
+\usepackage{listings}
+%\usepackage{courier}
+\usepackage{caption}
+\lstset{
+	basicstyle=\footnotesize\ttfamily,	% default font
+	numbers=left,						% line numbers placement
+	numberstyle=\tiny,					% line numbers style
+	%stepnumber=2,						% line number padding
+	numbersep=5pt,						% padding between line numbers and code
+	tabsize=2,							% 
+	extendedchars=true,         
+	breaklines=true,						% line breaks 
+	keywordstyle=\color{red},
+	frame=b,
+	stringstyle=\color{gray}\ttfamily,	% color of strings in code
+	showspaces=false,					% visualize spaces
+    showtabs=false,						% visualize tabs
+    xleftmargin=17pt,
+	framexleftmargin=17pt,
+	framexrightmargin=5pt,
+	framexbottommargin=4pt,
+	showstringspaces=false				% visualize spaces in strings        
+ }
+ 
+ \lstloadlanguages{% Check docs for further languages ...
+         C,
+         C++,
+         bash
+ }
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}\medskipamount
+
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+
+% layout the box
+%\DeclareCaptionFormat{listing}{\colorbox[rgb]{0.43, 0.35, 0.35 {\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
+
+% layout the caption ontop of code
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white, singlelinecheck=false, margin=0pt, font={bf,footnotesize}}
+
+% Headings
+\usepackage{fancyhdr}
+\fancyhead[R]{\colorbox{blue!20}{ Oliver Erxleben}}
+\fancyfoot{}
+
+% Document begins now
+\begin{document}
+
+\author{%
+	Martin Helmich \small(\href{mailto:martin.helmich@hs-osnabrueck.de}{martin.helmich@hs-osnabrueck.de})\\%
+	Oliver Erxleben \small(\href{mailto:oliver.erxleben@hs-osnabrueck.de}{oliver.erxleben@hs-osnabrueck.de})\\ \\%
+	%
+	Hochschule Osnabr"uck \\%
+	Ingenieurswissenschaften und Informatik \\%
+	Informatik - Mobile und Verteilte Anwendungen }
+
+\title{\includegraphics[scale=0.75,keepaspectratio]{img/hs_os.png}\linebreak \linebreak Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}
+
+\maketitle
+\thispagestyle{empty}
+\tableofcontents
+\listoffigures
+
+\lstlistoflistings
+\thispagestyle{empty}
+\pagebreak
+\thispagestyle{empty}
+\begin{abstract}
+\textbf{Zusammenfassung:}\\ 	
+Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences. \\ 
+\\
+Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein Embbed Systems. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen.\\
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treiber und Der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten beschrieben. Anwenderprogramme zum Testen werden aus an geeigneten Stellen vorgestellt. Details über die Implementierung wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
+\\
+Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GCC verwendet. 
+\end{abstract}
+
+\pagebreak
+% set new page style
+
+\pagestyle{fancy}
+\setcounter{page}{1} 
+
+\section{Architektur}
+
+\section{Linux-Treiber-Modul: modzpu}
+
+\section{ZPU Lib: libzpu}
+
+\section{Intel Hex Lib: libcintelhex}
+
+\pagebreak % content ends here
+
+\fancyhead[R]{}
+
+\thispagestyle{empty}
+
+\renewcommand*{\biburlprefix}{(URL: }
+\renewcommand*{\biburlsuffix}{)}
+
+\pagebreak
+\addcontentsline{toc}{section}{Literaturverzeichnis} % Eintrag ins Inhaltsverzeichnis
+\bibliography{bib/bib}
+
+\appendix
+
+\end{document}

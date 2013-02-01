@@ -20,10 +20,15 @@
 *.log
 *.aux
 *.toc
+*.lof
+*.lot
+*.lol
+*.url
 *.snm
 *.nav
 *.synctex.gz
 *.vrb
 *.nav
+*.pdf
 
-concept/tex/concept.pdf
+tex/main.pdf
