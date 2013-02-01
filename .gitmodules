@@ -1,3 +1,6 @@
 [submodule "lib/libcintelhex"]
 	path = lib/libcintelhex
 	url = git@github.com:martin-helmich/libcintelhex.git
+[submodule "lib/libzpu"]
+	path = lib/libzpu
+	url = ssh://github.com/olivererxleben/zpulib.git
