@@ -90,12 +90,12 @@
 \thispagestyle{empty}
 \begin{abstract}
 \textbf{Zusammenfassung:}\\ 	
-Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Parallele und verteilte Algorithmen} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences. \\ 
+Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences. \\ 
 \\
-Die Arbeit gliedert sich in zwei Teile. Im ersten Teil wird eine Einführung in OpenMP gegeben. Es werden hier Kernfunktionen der Programmierschnittstelle gezeigt, die Parallelisierung von Schleifen verdeutlicht und auf Verteilung von Aufgaben eingegangen.\\
-Der zweite Teil zeigt die Optimierung der Parallelisierungsaufgabe aus Intel`s \textit{Accelerate Your Code} von September 2012 mittels OpenMP auf und vergleicht die Ergebnisse mit der Programmierbibliothek \textit{Threading Building Blocks} von Intel.\\
+Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein Embbed Systems. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen.\\
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treiber und Der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten beschrieben. Anwenderprogramme zum Testen werden aus an geeigneten Stellen vorgestellt. Details über die Implementierung wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
 \\
-Code-Beispiele werden aus Gründen der Lesbarkeit und des Umfangs in die Anhänge verschoben. An den Stellen wird auf die Source Codes verwiesen. Die Arbeit betrachtet weiterhin nur OpenMP in Verwendung mit C und C++. Fortran wird nicht behandelt.
+Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GCC verwendet. 
 \end{abstract}
 
 \pagebreak
@@ -103,6 +103,14 @@ Code-Beispiele werden aus Gründen der Lesbarkeit und des Umfangs in die Anhäng
 
 \pagestyle{fancy}
 \setcounter{page}{1} 
+
+\section{Architektur}
+
+\section{Linux-Treiber-Modul: modzpu}
+
+\section{ZPU Lib: libzpu}
+
+\section{Intel Hex Lib: libcintelhex}
 
 \pagebreak % content ends here
 
