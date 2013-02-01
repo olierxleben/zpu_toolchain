@@ -20,6 +20,10 @@
 *.log
 *.aux
 *.toc
+*.lof
+*.lot
+*.lol
+*.url
 *.snm
 *.nav
 *.synctex.gz
