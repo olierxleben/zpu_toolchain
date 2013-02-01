@@ -309,18 +309,18 @@ typedef struct ihex_recordset {
 		\begin{itemize}
 			\item Testgetriebene Entwicklung der Bibliotheken und Anwenderprogramme (z.B. mit CUnit\footnote{\url{http://cunit.sourceforge.net/}})
 			\item Erstellung portabler Build-Skripte mit \texttt{autoscan} und \texttt{autoconf}.\footnote{\url{http://www.gnu.org/software/autoconf/}}
-			\item Git\footnote{\url{http://git-scm.com/}} als Versionskontrollsystem. Zentrale Verwaltung auf Github, transparente Entwicklung
+			\item Git\footnote{\url{http://git-scm.com/}} als Versionskontrollsystem. Zentrale Verwaltung auf Github, transparente Entwicklung. Organisation der erstellten Komponenten in unabhängigen Git-Repositories.
 		\end{itemize}
 	\end{frame}
 	
 	\begin{frame}{Would-Be-Nice-Ideen}
 		\begin{itemize}
-			\item Laden der ZPU mit initialem Programm beim Booten.
+			\item Laden der ZPU mit initialem Programm beim Booten. Mögliches Vorgehen? Eventuelle Probleme beim FS-Zugriff aus dem Kernel?
 			\item Freigabe einzelner Komponenten (\texttt{libintelhex}) als OSS?
 			\item Portable Build-Skripte (evtl. mit \texttt{automake} und \texttt{autoconf}).
 			\item Paketierung (DEB oder RPM) zur einfachen Verteilung und Installation
 			\item Manpages
-			\item Python-/Ruby-Bindings für die erstellten Bibliotheken?
+			\item Python-/Ruby-Bindings für die erstellten Bibliotheken? Anwenderprogramme in Python/Ruby?
 			\item Automatisches Erstellen von Gerätedateien mit \texttt{udev}.\footnote{\url{http://mohammadthalif.wordpress.com/2010/01/02/udev-rules-to-create-a-dev-node-when-inserting-a-module/}}
 			\item Intel HEX-Dateien mit 32 statt 16 Bit.
 			\item To be continued...
