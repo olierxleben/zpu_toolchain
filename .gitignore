@@ -29,5 +29,6 @@
 *.synctex.gz
 *.vrb
 *.nav
+*.pdf
 
-concept/tex/concept.pdf
+tex/main.pdf
