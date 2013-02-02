@@ -80,7 +80,7 @@ void fifo_write_byte(fifo_t *f, u8 b)
 	if (FIFO_NOT_FULL(f))
 	{
 		f->data[f->write] = b;
-		f->write = f->write + %f->size;
+		f->write = (f->write + 1) % f->size;
 		f->count ++;
 	}
 }

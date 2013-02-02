@@ -162,7 +162,7 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	}
 	
 	// Disable stdin interrupt, enable stdout interrupt.
-	ZPU_IO_WRITE(ADDR_CTRL, CTRL_STDOUT_READY);
+	ZPU_IO_WRITE(ADDR_CONTROL, CTRL_STDOUT_READY);
 
 	return 0;
 
@@ -177,7 +177,7 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		unregister_chrdev_region(dev_number, MINOR_COUNT);
 		
 	alloc_chrdev_region_failed:
-		iounmak(pcidev_config);
+		iounmap(pcidev_config);
 		pci_release_regions(dev);
 		printk(KERN_WARNING "Gerätenummer konnte nicht ermittelt werden.\n");
 		

@@ -3,10 +3,10 @@
 #define ZPU_IR_DISABLE_ALL   ZPU_IO_WRITE(ADDR_CONTROL, 0); 
 	
 
-#define ZPU_ENABLE_STDIN_IR   ZPU_IR_ENABLE  (CTRL_TXIE);
-#define ZPU_DISABLE_STDIN_IR  ZPU_IR_DISABLE (CTRL_TXIE);
-#define ZPU_ENABLE_STDOUT_IR  ZPU_IR_ENABLE  (CTRL_RXIE);
-#define ZPU_DISABLE_STDOUT_IR ZPU_IR_DISABLE (CTRL_RXIE);
+#define ZPU_ENABLE_STDIN_IR()   ZPU_IR_ENABLE  (CTRL_TXIE);
+#define ZPU_DISABLE_STDIN_IR()  ZPU_IR_DISABLE (CTRL_TXIE);
+#define ZPU_ENABLE_STDOUT_IR()  ZPU_IR_ENABLE  (CTRL_RXIE);
+#define ZPU_DISABLE_STDOUT_IR() ZPU_IR_DISABLE (CTRL_RXIE);
 
 
 irqreturn_t myirq_handler(int irq, void *dev_id, struct pt_regs *regs)
@@ -42,7 +42,7 @@ irqreturn_t myirq_handler(int irq, void *dev_id, struct pt_regs *regs)
 		
 		while ((status & STAT_STDOUT_READY) > 0 && FIFO_NOT_FULL(f))
 		{
-			fifo_write_byte(f, ZPU_IO_READ(ADDR_DATA);
+			fifo_write_byte(f, ZPU_IO_READ(ADDR_DATA));
 			
 			udelay(75);
 			status = ZPU_IO_READ(ADDR_STATUS);
