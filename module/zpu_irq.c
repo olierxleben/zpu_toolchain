@@ -9,7 +9,7 @@
 #define ZPU_DISABLE_STDOUT_IR() ZPU_IR_DISABLE (CTRL_RXIE);
 
 
-irqreturn_t myirq_handler(int irq, void *dev_id, struct pt_regs *regs)
+irqreturn_t myirq_handler(int irq, void *dev_id)
 {
 	unsigned int status = ZPU_IO_READ(ADDR_STATUS);
 	

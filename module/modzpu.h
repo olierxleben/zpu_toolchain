@@ -46,7 +46,7 @@ static int     mychr_open  (struct inode* inodep, struct file* filep);
 static int     mychr_close (struct inode* inodep, struct file* filep);
 static int     mychr_mmap  (struct file *filep, struct vm_area_struct *vma);
 static int     mychr_ioctl (struct inode *inodep, struct file* filep, unsigned int cmd, unsigned long param);
-static ssize_t mychr_write (struct file *filep, char __user *data, size_t count, loff_t *offset);
+static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset);
 static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count, loff_t *offset);
 
 struct file_operations mychr_fops = {
@@ -69,4 +69,4 @@ static struct vm_operations_struct myvma_ops = {
 };
 
 // Interrupt-Kram
-irqreturn_t myirq_handler(int irq, void *dev_id, struct pt_regs *regs);
+irqreturn_t myirq_handler(int irq, void *dev_id);

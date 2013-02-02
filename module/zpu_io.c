@@ -1,7 +1,7 @@
-static ssize_t mychr_write (struct file *filep, char __user *data, size_t count, loff_t *offset)
+static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
 {
-	fifo_t *f = &(zpu_io_stdin);
-	unsigned int n;
+	fifo_t       *f = &(zpu_io_stdin);
+	unsigned int  n;
 	
 	if (FIFO_FULL(f))
 	{
@@ -18,11 +18,10 @@ static ssize_t mychr_write (struct file *filep, char __user *data, size_t count,
 	}
 	
 	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
-	f->count = f->count + n;
 	
 	if (f->write + n <= f->size)
 	{
-		copy_from_user(f->data + f->write, data, n);
+		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
 		f->write = (f->write + n) % f->size;
 	}
 	else
@@ -30,12 +29,13 @@ static ssize_t mychr_write (struct file *filep, char __user *data, size_t count,
 		unsigned int size1 = (f->size - f->write);
 		unsigned int size2 = (n - size1);
 		
-		copy_from_user(f->data + f->write, data, size1);
-		copy_from_user(f->data, data + size1, size2);
+		if (copy_from_user(f->data + f->write, data, size1) +
+		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
 		
 		f->write = size2;
 	}
 	
+	f->count = f->count + n;
 	ZPU_ENABLE_STDIN_IR();
 	
 	return n;
@@ -61,11 +61,10 @@ static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count,
 	}
 	
 	n = count < f->count ? count : f->count;
-	f->count = f->count - n;
 	
 	if (f->read + n <= f->size)
 	{
-		copy_to_user(data, &(f->data[f->read]), n);
+		if (copy_to_user(data, &(f->data[f->read]), n) > 0) return -EAGAIN;
 		f->read = (f->read + n) % f->size;
 	}
 	else
@@ -73,12 +72,13 @@ static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count,
 		unsigned int size1 = f->size - f->read;
 		unsigned int size2 = n - size1;
 		
-		copy_to_user(data, f->data + f->read, size1);
-		copy_to_user(data + size1, f->data, size2);
+		if (copy_to_user(data, f->data + f->read, size1) +
+		    copy_to_user(data + size1, f->data, size2) > 0) return -EAGAIN;
 		
 		f->read = size2;
 	}
 	
+	f->count = f->count - n;
 	ZPU_ENABLE_STDIN_IR();
 	
 	return n;

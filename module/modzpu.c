@@ -1,7 +1,11 @@
-/**
-@file modul.c
-@version 0.1 pretty alpha
-**/
+/** ZPU driver module
+ * 
+ *  Oliver Erxleben <oliver.erxleben@hs-osnabrueck.de>
+ *  Martin Helmich  <martin.helmich@hs-osnabrueck.de>
+ * 
+ *  University of applied sciences Osnabrück
+ */
+ 
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/fs.h>
@@ -21,7 +25,7 @@
 #include "fifo.c"
 	
 MODULE_AUTHOR("Erxleben, Helmich");
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("None");
 MODULE_DESCRIPTION("Control Driver for ZPU PCI device");
 MODULE_SUPPORTED_DEVICE("ZPU-Kram");
 
@@ -69,7 +73,7 @@ static int __init init(void)
 	struct pci_driver *d = &(mypci_driver);
 
 	d->name     = "zpu";
-	d->id_table = &(id_table);
+	d->id_table = (const struct pci_device_id*) &(id_table);
 	d->probe    = mypci_probe;
 	d->remove   = mypci_remove;
 
@@ -98,8 +102,7 @@ void __exit cleanup(void)
 
 static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
-	int              r, i;
-	struct resource *res;
+	int r, i;
 
 	if ((r = pci_enable_device(dev)) != 0)
 	{
@@ -119,7 +122,7 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		     if (flags & IORESOURCE_IO)  type = " IO";
 		else if (flags & IORESOURCE_MEM) type = "MEM";
 
-		printk("Ressource (%s): %lx-%lx, Größe: %lu\n", type, start, end, pci_resource_len(dev, i));
+		printk("Ressource (%s): %lx-%lx, Größe: %lu\n", type, start, end, (unsigned long) pci_resource_len(dev, i));
 	}
 
 	// Physikalische Adresse des Speicherbereichs und dessen Größe auslesen.
