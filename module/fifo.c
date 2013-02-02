@@ -1,5 +1,14 @@
 
 #include "linux/vmalloc.h"
+#include "linux/types.h"
+
+
+#define FIFO_EMPTY(fifop)     fifop->count == 0
+#define FIFO_FULL(fifop)      fifop->count == fifop->size
+#define FIFO_NOT_FULL(fifop)  fifop->count < fifop->size
+#define FIFO_NOT_EMPTY(fifop) fifop->count > 0
+#define FIFO_FREE(fifop)      fifop->size - fifop->count
+
 
 typedef struct {
 	int  read;
@@ -10,9 +19,13 @@ typedef struct {
 	wait_queue_head_t queue;
 } fifo_t;
 
-void fifo_init(fifo_t *f, size_t s);
-void fifo_delete(fifo_t *f);
-int  fifo_transfer(fifo_t *f1, fifo_t *f2, int n);
+
+void fifo_init       (fifo_t *f, size_t s);
+void fifo_delete     (fifo_t *f);
+int  fifo_transfer   (fifo_t *f1, fifo_t *f2, int n);
+u8   fifo_read_byte  (fifo_t *f);
+void fifo_write_byte (fifo_t *f, u8 b);
+
 
 void fifo_init(fifo_t *f, size_t s)
 {
@@ -48,4 +61,26 @@ int fifo_transfer(fifo_t *f1, fifo_t *f2, int n)
 
 	printk("Transferred %d bytes.\n", n);
 	return 0;
+}
+
+u8 fifo_read_byte(fifo_t *f)
+{
+	if (FIFO_NOT_EMPTY(f))
+	{
+		u8 r = f->data[f->read];
+		f->read = f->read + 1 % f->size;
+		f->count --;
+		return r;
+	}
+	return 0;
+}
+
+void fifo_write_byte(fifo_t *f, u8 b)
+{
+	if (FIFO_NOT_FULL(f))
+	{
+		f->data[f->write] = b;
+		f->write = f->write + %f->size;
+		f->count ++;
+	}
 }
