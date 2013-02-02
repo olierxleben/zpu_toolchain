@@ -29,8 +29,6 @@ MODULE_LICENSE("None");
 MODULE_DESCRIPTION("Control Driver for ZPU PCI device");
 MODULE_SUPPORTED_DEVICE("ZPU-Kram");
 
-// pci data structure
-// see script page 252
 DEFINE_PCI_DEVICE_TABLE(id_table) = {
 	{ PCI_DEVICE(VENDOR_ID, DEVICE_ID) }, 
 	{ 0, }
@@ -79,11 +77,11 @@ static int __init init(void)
 
 	if ((r = pci_register_driver(d)) != 0)
 	{
-		printk("PCI-Treiber konnte nicht registriert werden.\n");
+		OUT_WARN("Could not register ZPU device driver.\n");
 		return r;
 	}
 
-	printk("Modul initialisiert.\n");
+	OUT_DBG("Initialized module.\n");
 
 	return 0;
 }
@@ -91,7 +89,7 @@ static int __init init(void)
 void __exit cleanup(void)
 {
 	pci_unregister_driver(&mypci_driver);
-	printk("PCI-Treiber entladen.\n");
+	OUT_DBG("Unregistered PCI driver.\n");
 }
 
 
@@ -102,45 +100,29 @@ void __exit cleanup(void)
 
 static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
-	int r, i;
+	int r;
 
 	if ((r = pci_enable_device(dev)) != 0)
 	{
 		goto pci_enable_device_failed;
 	}
 
-	// Alle möglichen Speicherbereiche auslesen.
-	for (i = 0; i < 6; i ++)
-	{
-		unsigned long  start, end, flags;
-		char          *type = "???";
-
-		start = pci_resource_start (dev, i);
-		end   = pci_resource_end   (dev, i);
-		flags = pci_resource_flags (dev, i);
-		
-		     if (flags & IORESOURCE_IO)  type = " IO";
-		else if (flags & IORESOURCE_MEM) type = "MEM";
-
-		printk("Ressource (%s): %lx-%lx, Größe: %lu\n", type, start, end, (unsigned long) pci_resource_len(dev, i));
-	}
-
-	// Physikalische Adresse des Speicherbereichs und dessen Größe auslesen.
+	// Read physical address of the device's memory and it's size.
 	paddr = pci_resource_start (dev, 0);
 	plen  = pci_resource_len   (dev, 0);
 
-	printk("Interrupt-Nummer: %i\n", dev->irq);
+	OUT_DBG("PCI-Device 0x%x enabled.\n", DEVICE_ID);
 	
-	// Komplettes Konfigurationsregister in den Kernel-Speicher mappen.
+	// Map the entire memory resource into the kernel's address space.
 	if ((r = pci_request_regions(dev, "zpu")) != 0)
 	{
 		goto pci_request_regions_failed;
 	}
 
 	pcidev_config = ioremap(paddr, plen);
-	printk("Konfigurationsregister auf %p gemappt.\n", pcidev_config);
+	OUT_DBG("Mapped memory resource to %p.\n", pcidev_config);
 
-	// Gerätenummer alloziieren.
+	// Allocate character device number.
 	if ((r = alloc_chrdev_region(&dev_number, MINOR_FIRST, 1, "zpu")) != 0)
 	{
 		goto alloc_chrdev_region_failed;
@@ -149,15 +131,17 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	cdev_init(&c_dev, &mychr_fops);
 	c_dev.owner = THIS_MODULE;
 
-	// Gerät hinzufügen.
+	// Add character device.
 	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0)
 	{
 		goto cdev_add_failed;
 	}
 	
-	// Fifos initialisieren
+	// Initialize fifo buffers.
 	fifo_init(&(zpu_io_stdin) , ZPU_IO_BUFFER_SIZE);
 	fifo_init(&(zpu_io_stdout), ZPU_IO_BUFFER_SIZE);
+	
+	OUT_DBG("ZPU device ready to use.\n");
 	
 	if ((r = request_irq(dev->irq, myirq_handler, IRQF_SHARED, "zpu_ir", pcidev_config)) != 0)
 	{
@@ -170,42 +154,46 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	return 0;
 
 	request_irq_failed:
-		printk(KERN_WARNING "Interrupt-Handler konnte nicht registriert werden.\n");
+		OUT_WARN("Could not register interrupt handler for interrupt %i.\n", dev->irq);
 		fifo_delete(&(zpu_io_stdin));
 		fifo_delete(&(zpu_io_stdout));
 		cdev_del(&c_dev);
 		
 	cdev_add_failed:
-		printk(KERN_WARNING "Gerät konnte nicht registriert werden.\n");
+		OUT_WARN("Could not register character device.\n");
 		unregister_chrdev_region(dev_number, MINOR_COUNT);
 		
 	alloc_chrdev_region_failed:
 		iounmap(pcidev_config);
 		pci_release_regions(dev);
-		printk(KERN_WARNING "Gerätenummer konnte nicht ermittelt werden.\n");
+		OUT_WARN("Could not allocate character device number.\n");
 		
 	pci_request_regions_failed:
 		pci_disable_device(dev);
 		
 	pci_enable_device_failed:
-		printk(KERN_WARNING "Konnte Gerät nicht aktivieren.\n");
+		OUT_WARN("Could not enable character device.\n");
 		
 	return r;
 }
 
 static void mypci_remove(struct pci_dev *dev)
 {
+	// Free interrupt handler
 	free_irq(dev->irq, pcidev_config);
 
+	// Unmap PCI address mapping
 	iounmap(pcidev_config);
 	pci_release_regions(dev);
 
+	// Disable PCI device
 	pci_disable_device(dev);
 
+	// Disable and deallocate character devices.
 	cdev_del(&c_dev);
 	unregister_chrdev_region(dev_number, MINOR_COUNT);
 
-	printk("Tschuess.\n");
+	OUT_DBG("Goodbye.\n");
 }
 
 module_init(init);
