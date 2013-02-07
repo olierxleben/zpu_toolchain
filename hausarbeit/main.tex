@@ -82,9 +82,11 @@
 \maketitle
 \thispagestyle{empty}
 \tableofcontents
+
 \listoffigures
 
 \lstlistoflistings
+
 \thispagestyle{empty}
 \pagebreak
 \thispagestyle{empty}
@@ -92,10 +94,12 @@
 \textbf{Zusammenfassung:}\\ 	
 Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences. \\ 
 \\
-Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein Embbed Systems. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen.\\
-Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treiber und Der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten beschrieben. Anwenderprogramme zum Testen werden aus an geeigneten Stellen vorgestellt. Details über die Implementierung wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
+Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen zur Steuerung des ZPU entwickelt.\\
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten beschrieben. Anwenderprogramme zum Testen werden aus an geeigneten Stellen vorgestellt. \\ 
+Das 
+\\ Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
 \\
-Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GCC verwendet. 
+Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compiler GCC verwendet. 
 \end{abstract}
 
 \pagebreak
@@ -103,6 +107,9 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GCC verwe
 
 \pagestyle{fancy}
 \setcounter{page}{1} 
+
+\section{Einleitung}
+
 
 \section{Architektur}
 
