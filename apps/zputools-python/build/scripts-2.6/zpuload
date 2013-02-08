@@ -1,0 +1,67 @@
+#!/usr/bin/python
+
+import sys
+import zpu
+import getopt
+import logging
+import os
+
+def usage():
+	print """\033[1mZPU tools, version 1.0\033[0m
+	
+\033[1mAUTHORS\033[0m
+  Martin Helmich <martin.helmich@hs-osnabrueck.de>
+  Oliver Erxleben <oliver.erxleben@hs-osnabrueck.de>
+  
+\033[1mUSAGE\033[0m
+  %s [\033[32m-hdq\033[0m] <\033[33mfilename\033[0m>
+  
+  This program reads a Intel HEX formatted program from <\033[33mfilename\033[0m> and
+  loads it into the ZPU processor.
+  
+\033[1mOPTIONS\033[0m
+  \033[32m-h\033[0m, \033[32m--help\033[0m   Display this help screen.
+  \033[32m-d\033[0m, \033[32m--debug\033[0m  Print debug information.
+  \033[32m-q\033[0m, \033[32m--quiet\033[0m  Print only warnings.""" % sys.argv[0]
+
+def main():
+	logging.basicConfig(format='%(levelname)-8s: %(message)s', level=logging.INFO)
+
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "hdq", ["help","debug","quiet"])
+	except getopt.GetoptError as err:
+		print >> sys.stderr, str(err)
+		usage()
+		sys.exit(1)
+		
+	for o,a in opts:
+		if o in ('-h', '--help'):
+			usage()
+			sys.exit(0)
+		if o in ('-d', '--debug'):
+			logging.basicConfig(level=logging.DEBUG)
+		if o in ('-q', '--quiet'):
+			logging.basicConfig(level=logging.WARNING)
+		
+	if len(args) != 1:
+		logging.error("No input file was specified!")
+		usage()
+		sys.exit(1)
+		
+	filename = args[0]
+	logging.info("Loading file %s..." % filename)
+	
+	if not os.path.isfile(filename):
+		logging.error("File %s does not exist!" % filename)
+		sys.exit(1)
+		
+	try:
+		zpu.load_from_file(filename)
+	except Exception as err:
+		logging.critical(str(err))
+		
+	logging.info("Done")
+		
+
+if __name__ == '__main__':
+	main()

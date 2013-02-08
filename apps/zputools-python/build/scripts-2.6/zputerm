@@ -1,0 +1,47 @@
+#!/usr/bin/python
+
+import sys
+import zpu
+import getopt
+import logging
+import os
+
+import libzputerm
+
+ZPU_FILE = "/dev/zpu"
+
+def main():
+	global ZPU_FILE
+	logging.basicConfig(format='%(levelname)-8s: %(message)s', level=logging.INFO)
+
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "hdq", ["help","debug","quiet","zpu-file"])
+	except getopt.GetoptError as err:
+		print >> sys.stderr, str(err)
+		usage()
+		sys.exit(1)
+		
+	for o,a in opts:
+		if o in ('-h', '--help'):
+			usage()
+			sys.exit(0)
+		if o in ('-d', '--debug'):
+			logging.basicConfig(level=logging.DEBUG)
+		if o in ('-q', '--quiet'):
+			logging.basicConfig(level=logging.WARNING)
+		if o in ('--zpu-file'):
+			ZPU_FILE = "/dev/zpu"
+			
+	input  = libzputerm.InputThread(ZPU_FILE)
+	output = libzputerm.OutputThread(ZPU_FILE)
+	
+	output.start()
+	input.run()
+	
+	#input.join()
+	output.join()
+	
+	print ""
+	
+if __name__ == "__main__":
+	main()

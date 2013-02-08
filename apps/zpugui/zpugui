@@ -1,0 +1,80 @@
+#!/usr/bin/python
+
+import pygtk
+import gtk
+import os
+import threading
+import signal
+
+zpu = os.open("/dev/zpu", os.O_RDWR)
+
+def read_loop(buf):
+	while True:
+		print "Reading"
+		
+		try: out = os.read(zpu, 1024)
+		except KeyboardInterrupt: break
+		
+		print "Read %s" % out
+		
+		#buf.set_text("%s\n%s" % (buf.get_text(), out))
+		buf.insert(buf.get_start_iter(), "%s\n" % out)
+
+def send_stdin(entry, event):
+	if gtk.gdk.keyval_name(event.keyval) == "Return" and len(entry.get_text()) > 0:
+		print "Write %s" % entry.get_text()
+		os.write(zpu, entry.get_text())
+		entry.set_text("")
+
+def delete_event(widget, event, data=None):
+	return False
+
+def ctrl_c_event(widget, event):
+	
+	if (event.state & gtk.gdk.CONTROL_MASK) and (gtk.gdk.keyval_name(event.keyval) == "c"): 
+		gtk.main_quit()
+	
+	
+	
+def destroy(widget, data=None):
+	gtk.main_quit()
+
+window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+window.connect("destroy", destroy)
+window.connect("delete_event", delete_event)
+#window.connect("key_press_event",ctrl_c_event)
+window.resize(640,480)
+
+buf = gtk.TextBuffer()
+buf.set_text("")
+
+buf_in = gtk.Entry()
+buf_in.connect("key-press-event", send_stdin)
+
+view = gtk.TextView(buf)
+view.set_editable(False)
+
+t = threading.Thread(target=read_loop, args=(buf,))
+t.start()
+
+pane = gtk.VPaned()
+pane.add(buf_in)
+pane.add(view)
+
+window.add(pane)
+
+buf_in.show()
+view.show()
+pane.show()
+window.show()
+
+
+def term():
+	print "tschasdss"
+	sys.exit(0)
+
+signal.signal(signal.SIGINT, term)
+signal.signal(signal.SIGTERM, term)
+
+gtk.gdk.threads_init()
+gtk.main()
