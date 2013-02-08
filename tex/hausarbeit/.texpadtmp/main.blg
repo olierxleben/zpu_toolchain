@@ -2,6 +2,7 @@ This is BibTeX, Version 0.99d (TeX Live 2012)
 Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: main.aux
 The style file: jurabib.bst
+A level-1 auxiliary file: snippets/zpuIO.aux
 I found no \citation commands---while reading file main.aux
 Reallocated singl_function (elt_size=4) to 100 items from 50.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
@@ -14,7 +15,7 @@ Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: ../bib/bib.bib
 You've used 0 entries,
             7954 wiz_defined-function locations,
-            1388 strings with 10434 characters,
+            1389 strings with 10452 characters,
 and the built_in function-call counts, 23 in all, are:
 = -- 0
 > -- 0

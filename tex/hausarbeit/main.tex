@@ -13,7 +13,7 @@
 \usepackage{xcolor}
 \usepackage{jurabib}
 \usepackage{hyperref}
-
+\usepackage{tikz}
 \include{lib/jurabib}
 \bibliographystyle{jurabib}
 
@@ -117,6 +117,21 @@ Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse üb
 Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Zweig der Programmierung von Computersystemen dar.
 
 \section{Architektur}
+
+\begin{figure}[!htb]
+	\include{snippets/archOverview}
+	\caption{Überblick über zu entwickelnde Architektur}
+	\label{zpu_architecture}
+\end{figure}
+
+
+\begin{figure}[!htb]
+	%include from externl
+	\include{snippets/zpuIO}
+	\caption{ZPU-Ein und Ausgabe}
+	\label{zpu_io}
+\end{figure}
+
 
 \section{Linux-Treiber-Modul: modzpu}
 
