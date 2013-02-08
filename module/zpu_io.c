@@ -93,6 +93,10 @@ static int mychr_ioctl(struct inode *inodep, struct file* filep, unsigned int cm
 			break;
 		case RAGGED_ZPU_START:
 			ZPU_IO_WRITE(ADDR_SYSCTL, SYSCTL_START);
+			if (FIFO_NOT_FULL((&zpu_io_stdout)))
+			{
+				ZPU_ENABLE_STDOUT_IR();
+			}
 			break;
 		default:
 			printk(KERN_WARNING "Unbekanntes ioctl-Kommando: %x\n", cmd);
