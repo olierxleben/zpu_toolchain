@@ -25,6 +25,7 @@ irqreturn_t myirq_handler(int irq, void *dev_id)
 			
 			udelay(75);
 			status = ZPU_IO_READ(ADDR_STATUS);
+			OUT_DBG("Wrote 1 byte to STDIN.\n");
 		}
 		
 		if (FIFO_EMPTY(f))
@@ -42,10 +43,12 @@ irqreturn_t myirq_handler(int irq, void *dev_id)
 		
 		while ((status & STAT_STDOUT_READY) > 0 && FIFO_NOT_FULL(f))
 		{
-			fifo_write_byte(f, ZPU_IO_READ(ADDR_DATA));
+			int b = ZPU_IO_READ(ADDR_DATA);
+			fifo_write_byte(f, b);
 			
 			udelay(75);
 			status = ZPU_IO_READ(ADDR_STATUS);
+			OUT_DBG("Read 1 byte (%02x) from STDOUT.\n", b & 0xFF);
 		}
 		
 		if (FIFO_FULL(f))

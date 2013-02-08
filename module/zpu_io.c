@@ -89,13 +89,19 @@ static int mychr_ioctl(struct inode *inodep, struct file* filep, unsigned int cm
 	switch(cmd)
 	{
 		case RAGGED_ZPU_STOP:
+			OUT_DBG("Stopping ZPU.\n");
 			ZPU_IO_WRITE(ADDR_SYSCTL, SYSCTL_STOP);
 			break;
 		case RAGGED_ZPU_START:
+			OUT_DBG("Starting ZPU.\n");
 			ZPU_IO_WRITE(ADDR_SYSCTL, SYSCTL_START);
 			if (FIFO_NOT_FULL((&zpu_io_stdout)))
 			{
+				OUT_DBG("Enabling STDOUT interrupt.\n");
 				ZPU_ENABLE_STDOUT_IR();
+				
+				OUT_DBG("CTRL-Register: %08x\n", ZPU_IO_READ(ADDR_CONTROL));
+				OUT_DBG("STAT-Register: %08x\n", ZPU_IO_READ(ADDR_STATUS));
 			}
 			break;
 		default:
