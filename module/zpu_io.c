@@ -48,7 +48,7 @@ static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count,
 	
 	if (f->count == 0)
 	{
-		ZPU_ENABLE_STDIN_IR();
+		ZPU_ENABLE_STDOUT_IR();
 		
 		if (filep->f_flags & O_NONBLOCK)
 		{
@@ -79,7 +79,7 @@ static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count,
 	}
 	
 	f->count = f->count - n;
-	ZPU_ENABLE_STDIN_IR();
+	ZPU_ENABLE_STDOUT_IR();
 	
 	return n;
 }
