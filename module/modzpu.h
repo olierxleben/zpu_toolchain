@@ -6,7 +6,7 @@
 #else
 # define OUT_DBG(msg, ...)
 #endif
-#define OUT_WARN(mgs, ...) printk(KERN_WARNING msg, ##__VA_ARGS__)
+#define OUT_WARN(msg, ...) printk(KERN_WARNING msg, ##__VA_ARGS__)
 
 #define MINOR_COUNT 1
 #define MINOR_FIRST 0
