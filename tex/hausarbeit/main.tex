@@ -96,8 +96,8 @@ Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit v
 \\
 Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen zur Steuerung des ZPU entwickelt.\\
 Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt. \\ 
-Das 
-\\ Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
+
+Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
 \\
 % TODO Kernel Version ???
 Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compiler GCC unter Linux verwendet. 
@@ -117,10 +117,10 @@ Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse üb
 Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Zweig der Programmierung von Computersystemen dar.
 
 \section{Architektur}
-
+% TODO: verfassen
 \begin{figure}[!htb]
 	\include{snippets/archOverview}
-	\caption{Überblick über zu entwickelnde Architektur}
+	\caption{Überblick ZPU-Toolchain}
 	\label{zpu_architecture}
 \end{figure}
 
@@ -136,8 +136,15 @@ Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen
 \section{Linux-Treiber-Modul: modzpu}
 
 \section{ZPU Lib: libzpu}
-
+% TODO: verfassen
 \section{Intel Hex Lib: libcintelhex}
+
+\begin{figure}[!htb]
+	%include from externl
+	\include{snippets/libcintelhex_datastructs}
+	\caption{Datenstrukturen der libcintelhex}
+	\label{lcih_datastructs}
+\end{figure}
 
 \pagebreak % content ends here
 
