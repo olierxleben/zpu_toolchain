@@ -114,26 +114,34 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 % TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme. \\
 Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die angeschlossenen Hardware-Komonenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber:} hinterlegt und stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf eine Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt.\\
-Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Zweig der Programmierung von Computersystemen dar.
+Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Zweig der Programmierung von Computersystemen dar. \\
+\\
+
 
 \section{Architektur}
 % TODO: verfassen
-\begin{figure}[!htb]
-	\include{snippets/archOverview}
-	\caption{Überblick ZPU-Toolchain}
-	\label{zpu_architecture}
-\end{figure}
 
+\subsection{ZPU-}
 
 \begin{figure}[!htb]
-	%include from externl
-	\include{snippets/zpuIO}
-	\caption{ZPU-Ein und Ausgabe}
-	\label{zpu_io}
+	\begin{center}
+		%include from external
+		\include{snippets/zpuIO}
+		\caption{ZPU-Ein und Ausgabe}
+		\label{zpu_io}
+	\end{center}
 \end{figure}
 
 
 \section{Linux-Treiber-Modul: modzpu}
+
+\begin{figure}[!htb]
+	\begin{center}
+		\include{snippets/archOverview}
+		\caption{Überblick ZPU-Toolchain}
+		\label{zpu_architecture}	
+	\end{center}
+\end{figure}
 
 \section{ZPU Lib: libzpu}
 % TODO: verfassen
