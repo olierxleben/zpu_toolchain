@@ -31,7 +31,7 @@
 	extendedchars=true,         
 	breaklines=true,						% line breaks 
 	keywordstyle=\color{red},
-	frame=b,
+	frame=lrtb,
 	stringstyle=\color{gray}\ttfamily,	% color of strings in code
 	showspaces=false,					% visualize spaces
     showtabs=false,						% visualize tabs
@@ -51,15 +51,17 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}\medskipamount
 
-\DeclareCaptionFont{white}{\color{white}}
-\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
-\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\tikzstyle{every node}=[font=\footnotesize]
+
+%\DeclareCaptionFont{white}{\color{white}}
+%\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+%\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
 
 % layout the box
 %\DeclareCaptionFormat{listing}{\colorbox[rgb]{0.43, 0.35, 0.35 {\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
 
 % layout the caption ontop of code
-\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white, singlelinecheck=false, margin=0pt, font={bf,footnotesize}}
+%\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white, singlelinecheck=false, margin=0pt, font={bf,footnotesize}}
 
 % Headings
 \usepackage{fancyhdr}
@@ -145,14 +147,104 @@ Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen
 
 \section{ZPU Lib: libzpu}
 % TODO: verfassen
-\section{Intel Hex Lib: libcintelhex}
+\section{Parsing der Intel HEX-Dateien: Die libcintelhex}
+
+Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert.
+
+\subsection{Installation}
+
+Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen:
+
+\begin{lstlisting}[caption=Installation der cintelhex-Bibliothek]
+> ./configure # optional: --prefix=/usr/local
+> make
+> make install
+> ldconfig
+\end{lstlisting}
+
+Bei der Installation wird die Datei \texttt{libcintelhex.so} nach \texttt{<prefix>/lib}, und die Datei \texttt{cintelhex.h} nach \texttt{<prefix>/include} installiert. Das Standardpräfix ist \texttt{/usr/local}.
+
+Bei Verwendung des Standardpräfix kann die cintelhex-Bibliothek beim Linken durch den GCC-Parameter \texttt{-l cintelhex} aktiviert werden.
+
+\subsection{Schnittstellenbeschreibung}
+
+Die Methoden der cintelhex-Bibliothek können durch inkludieren der Header-Datei \texttt{cintelhex.h} verwendet werden. In der Datei werden folgende wichtigen Methoden deklariert:
+
+\begin{description}
+	\item[ihex\_recordset\_t* ihex\_rs\_from\_file(char* filename)] Diese Methode liest den Inhalt einer Intel HEX-Datei (der Dateiname wird durch \texttt{filename} beschrieben) in eine \texttt{ihex\_recordset\_t}-Struktur (siehe auch Abschnitt \ref{ihex_structs}). Sie liefert einen Zeiger auf die ausgelesene Struktur zurück, oder \texttt{NULL} im Fehlerfall.
+	\item[ihex\_recordset\_t* ihex\_rs\_from\_string(char* data)] Diese Methode verhält sich genau wie \texttt{ihex\_rs\_from\_file}, erwartet als Eingabeparameter jedoch direkt einen Zeiger auf einen Intel HEX-String.
+	\item[int ihex\_mem\_copy(ihex\_recordset\_t *rs, void* dst, ulong\_t n)] Diese Methode kopiert das durch eine Intel HEX-Datei beschriebene Programm an eine beliebige Stelle im Speicher. Das zu ladende Programm wird durch die Struktur \texttt{rs} beschrieben. Der Zeiger \texttt{dst} beschreibt die Zielposition im Speicher (dies kann auch ein durch \texttt{mmap} abgebildeter Gerätespeicher sein). \texttt{n} beschreibt die Größe des Zielbereichs. Die Methode liefert im Erfolgsfall 0, ansonsten einen Fehlercode zurück.
+	\item[char* ihex\_error()] Diese Methode liefert eine Beschreibung des zuletzt aufgetretenen Fehlers zurück. Falls kein Fehler aufgetreten ist, wird \texttt{NULL} zurückgeliefert.
+	\item[ihex\_error\_t ihex\_errno()] Diese Methode liefert den Fehlercode des zuletzt aufgetretenen Fehlers zurück. Falls kein Fehler aufgetreten ist, wird \texttt{0} zurückgeliefert.
+\end{description}
+
+\subsection{Datenstrukturen}
+\label{ihex_structs}
+
+Die cintelhex-Bibliothek definiert die Datenstrukturen \texttt{ihex\_recordset\_t} und \texttt{ihex\_record\_t}. Sie sind wie folgt definiert:
+
+\begin{lstlisting}[language=C,morekeywords={uint\_t, ihex\_rtype\_t, ihex\_addr\_t, ihex\_rdata\_t, ihex\_rchks\_t, ihex\_record\_t, ihex\_recordset\_t}, caption=Definition der \texttt{ihex\_record\_t}- und \texttt{ihex\_recordset\_t}-Strukturen]
+/// Models a single Intel HEX record.
+typedef struct ihex_record {
+	uint_t       ihr_length;   //!< Length of the record in bytes.
+	ihex_rtype_t ihr_type;     //!< Record type (see ihex_rtype_t).
+	ihex_addr_t  ihr_address;  //!< Base address offset.
+	ihex_rdata_t ihr_data;     //!< Record data.
+	ihex_rchks_t ihr_checksum; //!< The record's checksum.
+} ihex_record_t;
+
+/// Models a set of Intel HEX records.
+typedef struct ihex_recordset {
+	uint_t         ihrs_count;   //!< Amount of records.
+	ihex_record_t *ihrs_records; //!< A list of record (with ihrs_count elements).
+} ihex_recordset_t;
+\end{lstlisting}
+
+Abbildung \ref{lcih_datastructs} zeigt zudem die Beziehungen der Datenstrukturen untereinander. Das Attribut \texttt{ihex\_data} der Struktur \texttt{ihex\_record\_t} ist ein Zeiger auf ein \texttt{uint8\_t}-Feld der Länge \texttt{ihr\_length}.
 
 \begin{figure}[!htb]
 	%include from externl
-	\include{snippets/libcintelhex_datastructs}
+	\begin{center}
+		\include{snippets/libcintelhex_datastructs}
+	\end{center}
 	\caption{Datenstrukturen der libcintelhex}
 	\label{lcih_datastructs}
 \end{figure}
+
+\subsection{Fehlercodes}
+
+Die \texttt{cintelhex.h} definiert die folgenden Fehlerkonstanten:
+
+\begin{description}
+	\item[IHEX\_ERR\_INCORRECT\_CHECKSUM] Tritt auf, wenn die Prüfsumme eines Eintrages ungültig ist. Zur Verifizierung der Prüfsumme werden alle Bytes eines Eintrages (einschließlich der Prüfsumme selbst) aufsummiert. Ist das unterste Byte der Summe $=0$, ist die Prüfsumme korrekt.
+	\item[IHEX\_ERR\_NO\_EOF] Tritt auf, wenn die Eingabedatei keinen EOF-Eintrag (Typ \texttt{0x01}) enthält.
+	\item[IHEX\_ERR\_PARSE\_ERROR]
+	\item[IHEX\_ERR\_WRONG\_RECORD\_LENGTH]
+	\item[IHEX\_ERR\_NO\_INPUT]
+	\item[IHEX\_ERR\_UNKNOWN\_RECORD\_TYPE]
+	\item[IHEX\_ERR\_PREMATURE\_EOF]
+	\item[IHEX\_ERR\_ADDRESS\_OUT\_OF\_RANGE]
+	\item[IHEX\_ERR\_MMAP\_FAILED]
+\end{description}
+
+\subsection{Anwendungsbeispiel}
+
+\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek]
+#include <stdlib.h>
+#include <cintelhex.h>
+
+int main()
+{
+	ihex_recordset_t* r = ihex_rs_from_file("input.hex");
+	void*             d = malloc(8192);
+	
+	if (r != NULL)
+	{
+		return ihex_mem_copy(r, d, 8192);
+	}
+	return ihex_errno();
+}
+\end{lstlisting}
 
 \pagebreak % content ends here
 
