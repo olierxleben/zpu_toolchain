@@ -1,4 +1,5 @@
 \begin{tikzpicture}
+
 	\usetikzlibrary{arrows}
 	\tikzstyle{attr}=[midway,text width=3.3cm,text height=0.3cm]
 	\tikzstyle{green}=[fill=green!20]
@@ -10,15 +11,15 @@
 			
 	\draw [fill=yellow!50] (0,-2) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_record\_t}};
 	\draw [yellow] (0,-2.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_length} = 4};
-	\draw [yellow] (0,-3) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_type} = 0x00};
-	\draw [yellow] (0,-3.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_addr} = 0x00};
-	\draw [yellow] (0,-4) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_data} = };
+	\draw [yellow] (0,-3) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_type} = 0x00};
+	\draw [yellow] (0,-3.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_addr} = 0x00};
+	\draw [yellow] (0,-4) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_data} = };
 			
 	\draw [fill=yellow!50] (3.5,-2) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_record\_t}};
 	\draw [yellow] (3.5,-2.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_length} = 6};
-	\draw [yellow] (3.5,-3) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_type} = 0x00};
-	\draw [yellow] (3.5,-3.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_addr} = 0x04};
-	\draw [yellow] (3.5,-4) rectangle +(3.5,0.5) node [attr] {\texttt{ihex\_data} = };
+	\draw [yellow] (3.5,-3) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_type} = 0x00};
+	\draw [yellow] (3.5,-3.5) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_addr} = 0x04};
+	\draw [yellow] (3.5,-4) rectangle +(3.5,0.5) node [attr] {\texttt{ihr\_data} = };
 			
 	\draw[*->] (3,-0.7) -- (3,-1.5);
 	\draw[*->] (2.5,-3.7) -- (2.5,-4.5) -- (0.75/2, -4.5) -- (0.75/2,-5);
