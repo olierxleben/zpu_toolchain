@@ -80,7 +80,7 @@
 	Informatik - Mobile und Verteilte Anwendungen }
 
 \title{\includegraphics[scale=0.75,keepaspectratio]{img/hs_os.png}\linebreak \linebreak Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}
-\subtitle{Am Beispiel eines ZPU und Linux}
+\subtitle{Am Beispiel einer ZPU unter Linux}
 
 \maketitle
 \thispagestyle{empty}
@@ -159,9 +159,20 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 
 
 \section{Linux-Treiber-Modul: modzpu}
-
-\section{ZPU Lib: libzpu}
 % TODO: verfassen
+
+\section{Programmierung des ZPU: Die libzpu}
+% TODO: erweitern
+Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann.
+
+\subsection{Bibliotheksfunktionen}
+
+\subsubsection{Dateien Laden}
+
+\subsubsection{ZPU Starten und Stoppen}
+
+\subsection{Python-Bindings}
+
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
 
 Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert. Der folgende Abschnitt beschreibt zunächst das Intel HEX-Datenformat, erläutert anschließend Installation und Schnittstellen der (im Rahmen dieser Arbeit entstandenen) cintelhex-Bibliothek und erklärt die dort verwendeten Algorithmen.
