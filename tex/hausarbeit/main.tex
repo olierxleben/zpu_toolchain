@@ -164,24 +164,47 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 % TODO: verfassen
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
 
-Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert.
+Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert. Der folgende Abschnitt beschreibt zunächst das Intel HEX-Datenformat, erläutert anschließend Installation und Schnittstellen der (im Rahmen dieser Arbeit entstandenen) cintelhex-Bibliothek und erklärt die dort verwendeten Algorithmen.
 
 \subsection{Das Intel HEX-Format}
 
 Bei dem \emph{INTEL Hexadecimal Object File Format} (kurz \emph{INTEL HEX}) handelt es sich um ein Dateiformat zur Codierung binärer Daten in ASCII-Dateien. Ursprünglich ausgelegt für 8-Bit-Intelprozessoren mit Adressräumen von 16 Bit, wurde das Format später erweitert für 16-Bit-Prozessoren mit 20-Bit-Adressräumen und für 32-Bit-Prozessoren.
 \footnote{Vgl. \cite[S. 4]{intelhex}}
 
-\begin{tikzpicture}
-	\node (recmark) [fill=green!20] at (0,0) {\texttt{:}}
-		node (length) [fill=red!20,right=6pt] {\texttt{10}}
-		node (address) [fill=yellow!20,right=6pt] {\texttt{0400}}
-		node (content) [fill=blue!20,right=6pt] {\texttt{0b0b0b..}}
-		node (checksum) [fill=purple!20,right=6pt] {\texttt{C3}};
-\end{tikzpicture}
+Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} dargestellt. Jeder Datensatz beginnt mit einem \emph{Record Mark} (ein \texttt{:}-Zeichen, oder \texttt{0x3A} in ASCII). Es folgen die Länge des Datensatzes (1 Byte, codiert in 2 ASCII-Zeichen), der Adress-Offset (2 Byte), der Typ des Datensatzes (1 Byte), der eigentliche Datensatz (variabel, bis zu 255 Bytes) und eine Prüfsumme (1 Byte), anhand derer die Korrektheit des Datensatzes überprüft werden kann.
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+	\hline
+	\texttt{:} & \texttt{10} & \texttt{0400} & \texttt{00} & \texttt{B0B0B98B02D0B0B0B88800400000000} & \texttt{29} \\ \hline
+	& Länge & Adresse & Typ & Daten & Prüfsumme \\ \hline
+\end{tabular}
+\caption{Aufbau eines Intel HEX-Datensatzes}
+\label{record_structure}
+\end{center}
+\end{figure}
+
+Neben regulären Datensätzen (Typ \texttt{0x00}) und einem EOF-Datensatz (Typ \texttt{0x01}), der das Dateiende markiert, kennt die Spezifikation noch weitere Datensatz-Typen, die beispielsweise die Nutzung eines 20- oder 32-Bit-Adressraums ermöglichen. So kann beispielsweise ein spezieller \emph{Extended Linear Address Record} (Typ \texttt{0x04}) verwendet werden, um durch Angabe einer \emph{Upper Linear Base Address} den Adressraum auf 32 Bit zu erweitern.
+
+Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendung der 32-Bit-Funktionen nicht notwendig. Aus diesem Grund bietet die cintelhex-Bibliothek nur experimentelle Unterstützung für 32-Bit-Adressen.
+
+\begin{lstlisting}[caption=Beispiel einer Intel HEX-Eingabedatei]
+:1000000000000000000000000000000000000000F0
+:0400100000000000EC
+:100400000B0B0B98B02D0B0B0B8880040000000029
+:1004100000000000000000000000000000000000DC
+// ...
+:1010E200000008D9000008D9000008D9000008D97A
+:1010F200000008D9000008D9000008D9000008D96A
+:0C110200000008D9000008D9000008D93E
+:0400000300000400F5
+:00000001FF
+\end{lstlisting}
 
 \subsection{Installation}
 
-Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen:
+Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen. Außer dem Build-Tool \texttt{make}, der C-Standardbibliothek und dem GCC werden keine Abhängigkeiten benötigt.
 
 \begin{lstlisting}[caption=Installation der cintelhex-Bibliothek]
 > ./configure # optional: --prefix=/usr/local
