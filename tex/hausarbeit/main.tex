@@ -151,6 +151,19 @@ Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen
 
 Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert.
 
+\subsection{Das Intel HEX-Format}
+
+Bei dem \emph{INTEL Hexadecimal Object File Format} (kurz \emph{INTEL HEX}) handelt es sich um ein Dateiformat zur Codierung binärer Daten in ASCII-Dateien. Ursprünglich ausgelegt für 8-Bit-Intelprozessoren mit Adressräumen von 16 Bit, wurde das Format später erweitert für 16-Bit-Prozessoren mit 20-Bit-Adressräumen und für 32-Bit-Prozessoren.
+\footnote{Vgl. \cite[S. 4]{intelhex}}
+
+\begin{tikzpicture}
+	\node (recmark) [fill=green!20] at (0,0) {\texttt{:}}
+		node (length) [fill=red!20,right=6pt] {\texttt{10}}
+		node (address) [fill=yellow!20,right=6pt] {\texttt{0400}}
+		node (content) [fill=blue!20,right=6pt] {\texttt{0b0b0b..}}
+		node (checksum) [fill=purple!20,right=6pt] {\texttt{C3}};
+\end{tikzpicture}
+
 \subsection{Installation}
 
 Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen:
@@ -218,18 +231,20 @@ Die \texttt{cintelhex.h} definiert die folgenden Fehlerkonstanten:
 \begin{description}
 	\item[IHEX\_ERR\_INCORRECT\_CHECKSUM] Tritt auf, wenn die Prüfsumme eines Eintrages ungültig ist. Zur Verifizierung der Prüfsumme werden alle Bytes eines Eintrages (einschließlich der Prüfsumme selbst) aufsummiert. Ist das unterste Byte der Summe $=0$, ist die Prüfsumme korrekt.
 	\item[IHEX\_ERR\_NO\_EOF] Tritt auf, wenn die Eingabedatei keinen EOF-Eintrag (Typ \texttt{0x01}) enthält.
-	\item[IHEX\_ERR\_PARSE\_ERROR]
-	\item[IHEX\_ERR\_WRONG\_RECORD\_LENGTH]
-	\item[IHEX\_ERR\_NO\_INPUT]
-	\item[IHEX\_ERR\_UNKNOWN\_RECORD\_TYPE]
-	\item[IHEX\_ERR\_PREMATURE\_EOF]
-	\item[IHEX\_ERR\_ADDRESS\_OUT\_OF\_RANGE]
-	\item[IHEX\_ERR\_MMAP\_FAILED]
+	\item[IHEX\_ERR\_PARSE\_ERROR] Tritt auf, wenn die Eingabedatei ungültig formatiert ist (etwa bei Fehlen des Record Marks (\texttt{:})).
+	\item[IHEX\_ERR\_WRONG\_RECORD\_LENGTH] Tritt auf, wenn die tatsächliche Länge eines Datensatzes nicht der im ersten Byte angegebenen entspricht.
+	\item[IHEX\_ERR\_NO\_INPUT] Tritt auf, wenn die Eingabedatei nicht existiert, oder nicht geöffnet werden konnte.
+	\item[IHEX\_ERR\_UNKNOWN\_RECORD\_TYPE] Tritt auf, wenn ein Datensatz eine ungültige Typ-Bezeichnung (Byte 4) hat).
+	\item[IHEX\_ERR\_PREMATURE\_EOF] Tritt auf, wenn der EOF-Datensatz (Typ \texttt{0x01}) in einer anderen Zeile als der letzten auftritt.
+	\item[IHEX\_ERR\_ADDRESS\_OUT\_OF\_RANGE] Tritt auf, wenn an eine ungültige Adresse geschrieben werden soll.
+	\item[IHEX\_ERR\_MMAP\_FAILED] Tritt auf, wenn eine Eingabedatei nicht in den Speicher gemappt werden konnte.
 \end{description}
 
 \subsection{Anwendungsbeispiel}
 
-\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek]
+Listing \ref{cintelhex-example} zeigt ein einfaches Anwendungsbeispiel der cintelhex-Bibliothek. Der Einfachheit halber zeigt die Variable \texttt{d} hier nur auf einen dynamisch alloziierten Speicherbereich, könnte jedoch auch ebenso gut auf den per \texttt{mmap} abgebildeten Speicher des ZPU-Boards zeigen.
+
+\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek,label=cintelhex-example]
 #include <stdlib.h>
 #include <cintelhex.h>
 
