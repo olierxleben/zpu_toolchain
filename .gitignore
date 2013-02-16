@@ -32,3 +32,7 @@
 *.pdf
 
 tex/main.pdf
+
+tex/hausarbeit/.texpadtmp/main.bbl
+
+tex/hausarbeit/.texpadtmp/main.blg
