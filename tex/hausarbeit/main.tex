@@ -63,7 +63,7 @@
 
 % Headings
 \usepackage{fancyhdr}
-\fancyhead[R]{\colorbox{blue!20}{ Oliver Erxleben}}
+\fancyhead[R]{}
 \fancyfoot{}
 
 % Document begins now
@@ -78,6 +78,7 @@
 	Informatik - Mobile und Verteilte Anwendungen }
 
 \title{\includegraphics[scale=0.75,keepaspectratio]{img/hs_os.png}\linebreak \linebreak Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}
+\subtitle{Am Beispiel eines ZPU und Linux}
 
 \maketitle
 \thispagestyle{empty}
@@ -95,8 +96,8 @@
 Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences. \\ 
 \\
 Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen zur Steuerung des ZPU entwickelt.\\
-Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt. \\ 
-
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt. \\ 
+\\
 Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\ 
 \\
 % TODO Kernel Version ???
@@ -113,16 +114,24 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 
 % TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme. \\
-Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die angeschlossenen Hardware-Komonenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber:} hinterlegt und stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf eine Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt.\\
-Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Zweig der Programmierung von Computersystemen dar. \\
-\\
+Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die angeschlossenen Hardware-Komonenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber:} hinterlegt und stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf eine Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt.% TODO Vergleich Buch einfügen\\
+Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar. \\
 
+\pagebreak
 
 \section{Architektur}
 % TODO: verfassen
+% TODO: erweitern
+ 
+\subsection{ZPU und PCI-Board}
+Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe eines Soft-CPU, bzw. dem ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Arbeitslast dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen. \\
+\\
+Zur Programmierung des ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt. \\
+\\
+Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos:}-Embbedded Operating System wird vom ZPU unterstützt. 
 
-\subsection{ZPU-}
-
+% TODO: PCI Board Beschreibung überarbeiten
+Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine Digitalanzeige. 
 \begin{figure}[!htb]
 	\begin{center}
 		%include from external
@@ -133,7 +142,8 @@ Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen
 \end{figure}
 
 
-\section{Linux-Treiber-Modul: modzpu}
+\subsection{Überblick über die Treiber-Toolchain}
+Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_architecture} zeigt die drei Ebenen die entwickelt werden. 
 
 \begin{figure}[!htb]
 	\begin{center}
@@ -142,6 +152,9 @@ Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen
 		\label{zpu_architecture}	
 	\end{center}
 \end{figure}
+
+
+\section{Linux-Treiber-Modul: modzpu}
 
 \section{ZPU Lib: libzpu}
 % TODO: verfassen
