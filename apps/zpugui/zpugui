@@ -5,6 +5,7 @@ import gtk
 import os
 import threading
 import signal
+import sys
 
 zpu = os.open("/dev/zpu", os.O_RDWR)
 
@@ -17,7 +18,6 @@ def read_loop(buf):
 		
 		print "Read %s" % out
 		
-		#buf.set_text("%s\n%s" % (buf.get_text(), out))
 		buf.insert(buf.get_start_iter(), "%s\n" % out)
 
 def send_stdin(entry, event):
@@ -28,21 +28,16 @@ def send_stdin(entry, event):
 
 def delete_event(widget, event, data=None):
 	return False
-
-def ctrl_c_event(widget, event):
-	
-	if (event.state & gtk.gdk.CONTROL_MASK) and (gtk.gdk.keyval_name(event.keyval) == "c"): 
-		gtk.main_quit()
 	
 	
 	
 def destroy(widget, data=None):
 	gtk.main_quit()
+	sys.exit(0)
 
 window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 window.connect("destroy", destroy)
 window.connect("delete_event", delete_event)
-#window.connect("key_press_event",ctrl_c_event)
 window.resize(640,480)
 
 buf = gtk.TextBuffer()
@@ -50,31 +45,31 @@ buf.set_text("")
 
 buf_in = gtk.Entry()
 buf_in.connect("key-press-event", send_stdin)
+label_in = gtk.Label("Input: ")	
+label_in
+
+top = gtk.HBox(False, 3)
+top.add(label_in)
+top.add(buf_in)
 
 view = gtk.TextView(buf)
 view.set_editable(False)
 
+scr = gtk.ScrolledWindow()
+scr.add_with_viewport(view)
+scr.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+
 t = threading.Thread(target=read_loop, args=(buf,))
+t.daemon = True
 t.start()
 
 pane = gtk.VPaned()
-pane.add(buf_in)
-pane.add(view)
+pane.add(top)
+pane.add(scr)
 
 window.add(pane)
 
-buf_in.show()
-view.show()
-pane.show()
-window.show()
-
-
-def term():
-	print "tschasdss"
-	sys.exit(0)
-
-signal.signal(signal.SIGINT, term)
-signal.signal(signal.SIGTERM, term)
+window.show_all()
 
 gtk.gdk.threads_init()
 gtk.main()
