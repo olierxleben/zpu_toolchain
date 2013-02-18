@@ -14,12 +14,13 @@
 \usepackage{jurabib}
 \usepackage{hyperref}
 \usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{enumitem}
 \include{lib/jurabib}
 \bibliographystyle{jurabib}
 
 % setup of source code listings
 \usepackage{listings}
-%\usepackage{courier}
 \usepackage{caption}
 \lstset{
 	basicstyle=\footnotesize\ttfamily,	% default font
@@ -40,13 +41,13 @@
 	framexrightmargin=5pt,
 	framexbottommargin=4pt,
 	showstringspaces=false				% visualize spaces in strings        
- }
+}
  
- \lstloadlanguages{% Check docs for further languages ...
-         C,
-         C++,
-         bash
- }
+\lstloadlanguages{% Check docs for further languages ...
+	C,
+	C++,
+	bash
+}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}\medskipamount
@@ -186,10 +187,10 @@ Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} d
 
 \begin{figure}
 \begin{center}
-\begin{tabular}{|c|c|c|c|c|c|}
-	\hline
-	\texttt{:} & \texttt{10} & \texttt{0400} & \texttt{00} & \texttt{B0B0B98B02D0B0B0B88800400000000} & \texttt{29} \\ \hline
-	& Länge & Adresse & Typ & Daten & Prüfsumme \\ \hline
+\begin{tabular}{cccccc}
+	\toprule
+	\texttt{:} & \texttt{10} & \texttt{0400} & \texttt{00} & \texttt{B0B0B98B02D0B0B0B88800400000000} & \texttt{29} \\ \midrule
+	& Länge & Adresse & Typ & Daten & Prüfsumme \\ \bottomrule
 \end{tabular}
 \caption{Aufbau eines Intel HEX-Datensatzes}
 \label{record_structure}
@@ -198,7 +199,7 @@ Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} d
 
 Neben regulären Datensätzen (Typ \texttt{0x00}) und einem EOF-Datensatz (Typ \texttt{0x01}), der das Dateiende markiert, kennt die Spezifikation noch weitere Datensatz-Typen, die beispielsweise die Nutzung eines 20- oder 32-Bit-Adressraums ermöglichen. So kann beispielsweise ein spezieller \emph{Extended Linear Address Record} (Typ \texttt{0x04}) verwendet werden, um durch Angabe einer \emph{Upper Linear Base Address} den Adressraum auf 32 Bit zu erweitern.
 
-Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendung der 32-Bit-Funktionen nicht notwendig. Aus diesem Grund bietet die cintelhex-Bibliothek nur experimentelle Unterstützung für 32-Bit-Adressen.
+Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendung der 32-Bit-Funktionen nicht notwendig (16 Bit adressieren maximal $2^{16} = 64$ KiB). Aus diesem Grund bietet die cintelhex-Bibliothek nur experimentelle Unterstützung für 32-Bit-Adressen.
 
 \begin{lstlisting}[caption=Beispiel einer Intel HEX-Eingabedatei]
 :1000000000000000000000000000000000000000F0
@@ -232,10 +233,10 @@ Bei Verwendung des Standardpräfix kann die cintelhex-Bibliothek beim Linken dur
 
 Die Methoden der cintelhex-Bibliothek können durch inkludieren der Header-Datei \texttt{cintelhex.h} verwendet werden. In der Datei werden folgende wichtigen Methoden deklariert:
 
-\begin{description}
+\begin{description}[style=unboxed]
 	\item[ihex\_recordset\_t* ihex\_rs\_from\_file(char* filename)] Diese Methode liest den Inhalt einer Intel HEX-Datei (der Dateiname wird durch \texttt{filename} beschrieben) in eine \texttt{ihex\_recordset\_t}-Struktur (siehe auch Abschnitt \ref{ihex_structs}). Sie liefert einen Zeiger auf die ausgelesene Struktur zurück, oder \texttt{NULL} im Fehlerfall.
 	\item[ihex\_recordset\_t* ihex\_rs\_from\_string(char* data)] Diese Methode verhält sich genau wie \texttt{ihex\_rs\_from\_file}, erwartet als Eingabeparameter jedoch direkt einen Zeiger auf einen Intel HEX-String.
-	\item[int ihex\_mem\_copy(ihex\_recordset\_t *rs, void* dst, ulong\_t n)] Diese Methode kopiert das durch eine Intel HEX-Datei beschriebene Programm an eine beliebige Stelle im Speicher. Das zu ladende Programm wird durch die Struktur \texttt{rs} beschrieben. Der Zeiger \texttt{dst} beschreibt die Zielposition im Speicher (dies kann auch ein durch \texttt{mmap} abgebildeter Gerätespeicher sein). \texttt{n} beschreibt die Größe des Zielbereichs. Die Methode liefert im Erfolgsfall 0, ansonsten einen Fehlercode zurück.
+	\item[int ihex\_mem\_copy(ihex\_recordset\_t *rs, void* dst, ulong\_t n, ihex\_width\_t w, ihex\_byteorder\_t o)] Diese Methode kopiert das durch eine Intel HEX-Datei beschriebene Programm an eine beliebige Stelle im Speicher. Das zu ladende Programm wird durch die Struktur \texttt{rs} beschrieben. Der Zeiger \texttt{dst} beschreibt die Zielposition im Speicher (dies kann auch ein durch \texttt{mmap} abgebildeter Gerätespeicher sein). \texttt{n} beschreibt die Größe des Zielbereichs. Die Methode liefert im Erfolgsfall 0, ansonsten einen Fehlercode zurück.
 	\item[char* ihex\_error()] Diese Methode liefert eine Beschreibung des zuletzt aufgetretenen Fehlers zurück. Falls kein Fehler aufgetreten ist, wird \texttt{NULL} zurückgeliefert.
 	\item[ihex\_error\_t ihex\_errno()] Diese Methode liefert den Fehlercode des zuletzt aufgetretenen Fehlers zurück. Falls kein Fehler aufgetreten ist, wird \texttt{0} zurückgeliefert.
 \end{description}
@@ -243,7 +244,7 @@ Die Methoden der cintelhex-Bibliothek können durch inkludieren der Header-Datei
 \subsection{Datenstrukturen}
 \label{ihex_structs}
 
-Die cintelhex-Bibliothek definiert die Datenstrukturen \texttt{ihex\_recordset\_t} und \texttt{ihex\_record\_t}. Sie sind wie folgt definiert:
+Die cintelhex-Bibliothek definiert die beiden Datenstrukturen \texttt{ihex\_recordset\_t} und \texttt{ihex\_record\_t}. Sie sind wie folgt definiert:
 
 \begin{lstlisting}[language=C,morekeywords={uint\_t, ihex\_rtype\_t, ihex\_addr\_t, ihex\_rdata\_t, ihex\_rchks\_t, ihex\_record\_t, ihex\_recordset\_t}, caption=Definition der \texttt{ihex\_record\_t}- und \texttt{ihex\_recordset\_t}-Strukturen]
 /// Models a single Intel HEX record.
@@ -304,9 +305,70 @@ int main()
 	
 	if (r != NULL)
 	{
-		return ihex_mem_copy(r, d, 8192);
+		return ihex_mem_copy(r, d, 8192, IHEX_WIDTH_32BIT, IHEX_ORDER_BIGENDIAN);
 	}
 	return ihex_errno();
+}
+\end{lstlisting}
+
+\subsection{Besonderheiten der Umsetzung}
+
+%\subsubsection{8- vs. 32-Bit-Zugriff}
+
+Erste Versionen der cintelhex-Bibliothek versuchten, den Zielspeicherbereits byteweise zu befüllen. Während dies bei Tests an dynamisch alloziiertem RAM kein Problem darstellte, wurde schnell deutlich, dass diese Art des Zugriffs bei dem Speicher des ZPU-Boards nicht funktioniert. Listings \ref{zpu_mem_8bit} und \ref{zpu_mem_32bit} verdeutlichen das Problem.
+
+\begin{lstlisting}[float=p,language=C,caption=Unerwartetes Verhalten des ZPU-Speichers bei 8-Bit-Zugriff,morekeywords={uint8_t,uint32_t},label=zpu_mem_8bit]
+uint8_t *d; // d zeigt auf den gemappten Geraetespeicher
+
+d[0x00] = 0x0b;
+printf("%02x \n", d[0x00]); // Gibt "0b" aus (korrekt).
+
+d[0x01] = 0x98;
+printf("%02x \n", d[0x00]); // Gibt "00" aus (sollte immer noch "0b" sein)!
+printf("%02x \n", d[0x01]); // Gibt "98" aus (korrekt).
+\end{lstlisting}
+
+\begin{lstlisting}[float=p,language=C,caption=Korrektes Verhalten des ZPU-Speichers bei 32-Bit-Zugriff,morekeywords={uint8_t,uint32_t},label=zpu_mem_32bit]
+uint8_t *d; // d zeigt auf den gemappten Geraetespeicher
+
+*((uint32_t*) d) = 0x0000980b;
+
+printf("%02x \n", d[0x00]); // Gibt "0b" aus (korrekt).
+printf("%02x \n", d[0x01]); // Gibt "98" aus (korrekt).
+\end{lstlisting}
+
+Weiterhin fiel auf, dass das geladene Programm von der ZPU nur dann korrekt ausgeführt werden konnte, wenn die Intel HEX-Daten als 32-Bit-Blöcke in \emph{Big Endian}-Reihenfolge interpretiert wurden. Abbildung  \ref{zpu_addresses} verdeutlicht diesen Zusammenhang.
+
+Die cintelhex-Bibliothek berücksichtigt diesen Zusammenhang. So akzeptiert die Methode \texttt{ihex\_mem\_copy} einen Parameter \texttt{w}, über welchen die Wortbreite angegeben werden kann, sowie einen Parameter \texttt{o}, welcher die Byte-Reihenfolge beschreibt. Listing \ref{ihex_copy_algo} beschreibt den Algorithmus zum Laden eines Intel HEX-Datensatzes in den ZPU-Speicher.
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{lrrrrrrrrc}
+	\toprule
+	Daten   &  0B &  0B &  0B &  98 &  B0 &  2D &  0B &  0B & $\ldots$ \\ \midrule
+	Adresse & 403 & 402 & 401 & 400 & 407 & 406 & 405 & 404 & $\ldots$ \\ \bottomrule
+\end{tabular}
+\end{center}
+\caption{Übersetzung von Binärdaten in lauffähige ZPU-Programme.}
+\label{zpu_addresses}
+\end{figure}
+
+\begin{lstlisting}[float=p,language=C,caption=Algorithmus zum Laden eines Intel HEX-Datensatzes in den ZPU-Speicher,morekeywords={uint8_t, uint32_t, ihex_width_t, ihex_record_t, ihex_byteorder_t},label=ihex_copy_algo]
+ihex_width_t     w = IHEX_WIDTH_32BIT;     //<! Wortbreite in Byte
+ihex_byteorder_t o = IHEX_ORDER_BIGENDIAN; //<! Byte-Reihenfolge
+uint8_t          j, l;                     //<! Laufvariablen
+ihex_record_t   *x;                        //<! Ein IHEX-Datensatz
+
+for (j = 0; j < x->ihr_length; j += w)
+{
+	uint32_t  v      = 0;
+	uint32_t *target = (uint32_t*) (d + address + j);
+					
+	for (l = 0; (l < w) && (j + l < x->ihr_length); l ++)
+	{
+		v += x->ihr_data[j+l] << (8 * ((o == IHEX_ORDER_BIGENDIAN) ? ((w - 1) - l) : l));
+	}
+	*(target) = v;
 }
 \end{lstlisting}
 
