@@ -1,0 +1,32 @@
+SRCS=$(wildcard src/*.c)
+OBJS=$(SRCS:src/%.c=obj/%.o)
+
+CCFLAGS ?= -std=c99 -O3 -Wall
+LDFLAGS ?= -lzpu
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+all: prepare release
+
+obj/%.o: src/%.c
+	$(CC) $(CCFLAGS) -o $@ -c $<
+
+clean:
+	rm -rf obj bin
+
+release: $(OBJS)
+	$(CC) $(CFLAGS) -lzpu -o bin/zpuload obj/zpuload.o
+	$(CC) $(CFLAGS) -lzpu -o bin/zpuio obj/zpuio.o
+
+prepare:
+	@MKDIR_P@ bin
+	@MKDIR_P@ obj
+
+install: all
+	@INSTALL@ -C bin/* -t @bindir@/
+
+test: all
+	$(MAKE) -C tests clean all
+	cd tests
+	tests/test
