@@ -117,7 +117,7 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 % TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme.\\
 \\
-Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt (Vgl. siehe \cite{ltp_book}, Kapitel 1).\\
+Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt \textit{(Vgl. siehe \cite{ltp_book}, Kapitel 1)}.\\
 \\
 Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
@@ -158,61 +158,6 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 \section{Linux-Treiber-Modul: modzpu}
 % TODO: verfassen
 
-\pagebreak
-\section{Programmierung der ZPU: Die libzpu}
-% TODO: erweitern
-Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann. \\
-\\
-Die Quelltexte für die Bibliothek finden sich auf der beigelegten CD oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
-
-\subsection{Installation}
-Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverzeichnis der Quellen gewechselt werden und dort über ein Unix-übliches Makefile ausgeführt werden.\\
-
-\begin{lstlisting}[caption=Installation der zpulib-Bibliothek]
-# in directory
-> ./configure
-> make
-> make install
-\end{lstlisting}
- 
-\subsection{Bibliotheksfunktionen}
-Die Methoden der libzpu können durch Einbindung der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. \\
-Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. 
-\\
-% TODO: Beschreibung, Zeilen anpassen
-\begin{lstlisting}[language=C][h!]
-
-/// Load an Intel HEX formatted program into the ZPU
-/** This method loads a new program into the ZPU. The input file needs
- *  to be an Intel HEX formatted binary.
- *  Before loading the program, the ZPU is set into "reset" mode. After
- *  that, the new program is parsed and copied into the ZPU's ROM and
- *  the ZPU is set back into regular mode.
- *  @param filename The filename of the input Intel HEX file.
- *  @return         ZPU_ERR_OK on success, otherwise an error code. */
-zpu_error_t zpu_load_from_file(char* filename);
-
-/// Halt the ZPU.
-/** This method sets the ZPU into "reset" mode.
- *  @return ZPU_ERR_OK on success, otherwise an error code. */
-int zpu_stop();
-
-/// Start the ZPU, if halted.
-/** This method sets the ZPU back into regular mode, if it was stopped
- *  earlier. 
- *  @return ZPU_ERR_OK on success, otherwise an error code. */
-int zpu_start();
-
-\end{lstlisting}
-
-% TODO: zpuload vorstellen 
-\subsubsection{Dateien Laden}
-
-\subsubsection{ZPU Starten und Stoppen}
-
-\subsubsection{}
-
-\subsection{Python-Bindings}
 \pagebreak
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
 
@@ -411,6 +356,63 @@ for (j = 0; j < x->ihr_length; j += w)
 	*(target) = v;
 }
 \end{lstlisting}
+
+\pagebreak
+\section{Programmierung der ZPU: Die libzpu}
+% TODO: erweitern
+Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann. \\
+\\
+Die Quelltexte für die Bibliothek finden sich auf der beigelegten CD oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
+
+\subsection{Installation}
+Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverzeichnis der Quellen gewechselt werden und dort über ein Unix-übliches Makefile ausgeführt werden.\\
+
+\begin{lstlisting}[caption=Installation der zpulib-Bibliothek]
+# in directory
+> ./configure
+> make
+> make install
+\end{lstlisting}
+ 
+\subsection{Bibliotheksfunktionen}
+Die Methoden der libzpu können durch Einbindung der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. \\
+Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. 
+\\
+Das Listing \ref{zpulibfuncs} zeigt einen Auszug mit den Funktionsköpfen der \textit{zpu.h}. \\
+% TODO: Beschreibung, Zeilen anpassen
+\begin{lstlisting}[language=C, firstnumber=44, label=zpulibfuncs, caption=zpulib-Bibliotheksfunktionen][h!]
+
+/// Load an Intel HEX formatted program into the ZPU
+/** This method loads a new program into the ZPU. The input file needs
+ *  to be an Intel HEX formatted binary.
+ *  Before loading the program, the ZPU is set into "reset" mode. After
+ *  that, the new program is parsed and copied into the ZPU's ROM and
+ *  the ZPU is set back into regular mode.
+ *  @param filename The filename of the input Intel HEX file.
+ *  @return         ZPU_ERR_OK on success, otherwise an error code. */
+zpu_error_t zpu_load_from_file(char* filename);
+
+/// Halt the ZPU.
+/** This method sets the ZPU into "reset" mode.
+ *  @return ZPU_ERR_OK on success, otherwise an error code. */
+int zpu_stop();
+
+/// Start the ZPU, if halted.
+/** This method sets the ZPU back into regular mode, if it was stopped
+ *  earlier. 
+ *  @return ZPU_ERR_OK on success, otherwise an error code. */
+int zpu_start();
+
+\end{lstlisting}
+
+% TODO: zpuload vorstellen 
+\subsubsection{Dateien Laden}
+
+\subsubsection{ZPU Starten und Stoppen}
+
+\subsubsection{}
+
+\subsection{Python-Bindings}
 
 \pagebreak
 \section{Fazit}
