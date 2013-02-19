@@ -1,5 +1,7 @@
+% Oliver Erxleben, Martin Helmich
+% Hardwarenahe System und Treiberprogrammierung
 %
-%
+% TODO: LibCIntelhex nach oben, vor libzpu? ?
 \documentclass[12pt]{scrartcl}
 
 % own geometry
@@ -157,20 +159,52 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 % TODO: verfassen
 
 \pagebreak
-\section{Programmierung des ZPU: Die libzpu}
+\section{Programmierung der ZPU: Die libzpu}
 % TODO: erweitern
-Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann.
+Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann. \\
+\\
+Die Quelltexte für die Bibliothek finden sich auf der beigelegten CD oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
 
 \subsection{Installation}
-Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverzeichnis der Quellen gewechselt werden und dort über das Makefile ausgeführt werden. \\
+Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverzeichnis der Quellen gewechselt werden und dort über ein Unix-übliches Makefile ausgeführt werden.\\
 
-\begin{lstlisting}[caption=Installation der libzpu-Bibliothek]
-> ./configure # optional: --prefix=/usr/local
+\begin{lstlisting}[caption=Installation der zpulib-Bibliothek]
+# in directory
+> ./configure
 > make
 > make install
 \end{lstlisting}
  
 \subsection{Bibliotheksfunktionen}
+Die Methoden der libzpu können durch Einbindung der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. \\
+Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. 
+\\
+% TODO: Beschreibung, Zeilen anpassen
+\begin{lstlisting}[language=C][h!]
+
+/// Load an Intel HEX formatted program into the ZPU
+/** This method loads a new program into the ZPU. The input file needs
+ *  to be an Intel HEX formatted binary.
+ *  Before loading the program, the ZPU is set into "reset" mode. After
+ *  that, the new program is parsed and copied into the ZPU's ROM and
+ *  the ZPU is set back into regular mode.
+ *  @param filename The filename of the input Intel HEX file.
+ *  @return         ZPU_ERR_OK on success, otherwise an error code. */
+zpu_error_t zpu_load_from_file(char* filename);
+
+/// Halt the ZPU.
+/** This method sets the ZPU into "reset" mode.
+ *  @return ZPU_ERR_OK on success, otherwise an error code. */
+int zpu_stop();
+
+/// Start the ZPU, if halted.
+/** This method sets the ZPU back into regular mode, if it was stopped
+ *  earlier. 
+ *  @return ZPU_ERR_OK on success, otherwise an error code. */
+int zpu_start();
+
+\end{lstlisting}
+
 % TODO: zpuload vorstellen 
 \subsubsection{Dateien Laden}
 
@@ -179,7 +213,7 @@ Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverze
 \subsubsection{}
 
 \subsection{Python-Bindings}
-
+\pagebreak
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
 
 Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert. Der folgende Abschnitt beschreibt zunächst das Intel HEX-Datenformat, erläutert anschließend Installation und Schnittstellen der (im Rahmen dieser Arbeit entstandenen) cintelhex-Bibliothek und erklärt die dort verwendeten Algorithmen.
@@ -191,7 +225,7 @@ Bei dem \emph{INTEL Hexadecimal Object File Format} (kurz \emph{INTEL HEX}) hand
 
 Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} dargestellt. Jeder Datensatz beginnt mit einem \emph{Record Mark} (ein \texttt{:}-Zeichen, oder \texttt{0x3A} in ASCII). Es folgen die Länge des Datensatzes (1 Byte, codiert in 2 ASCII-Zeichen), der Adress-Offset (2 Byte), der Typ des Datensatzes (1 Byte), der eigentliche Datensatz (variabel, bis zu 255 Bytes) und eine Prüfsumme (1 Byte), anhand derer die Korrektheit des Datensatzes überprüft werden kann.
 
-\begin{figure}
+\begin{figure}[h!]
 \begin{center}
 \begin{tabular}{cccccc}
 	\toprule
@@ -378,6 +412,7 @@ for (j = 0; j < x->ihr_length; j += w)
 }
 \end{lstlisting}
 
+\pagebreak
 \section{Fazit}
 
 \pagebreak % content ends here
