@@ -96,13 +96,10 @@
 \thispagestyle{empty}
 \begin{abstract}
 \textbf{Zusammenfassung:}\\ 	
-Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences.
-
+Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences. \\
 Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen zur Steuerung des ZPU entwickelt.\\
-Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt.
-
-Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.
-
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt.\\
+Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.\\
 % TODO Kernel Version ???
 Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compiler GCC unter Linux (Kernel-Version 2.6.XX) verwendet. 
 \end{abstract}
@@ -118,14 +115,13 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 % TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme.
 
-Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die angeschlossenen Hardware-Komonenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber:} hinterlegt und stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf eine Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt.% TODO Vergleich Buch einfügen\\
+Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber:} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt. % TODO Vergleich Buch einfügen\\
 
-Die Entwicklung eines Gerätetribers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
+Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
 \pagebreak
 
 \section{Architektur}
-% TODO: verfassen
 % TODO: erweitern
  
 \subsection{ZPU und PCI-Board}
@@ -146,9 +142,8 @@ Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zw
 	\end{center}
 \end{figure}
 
-
 \subsection{Überblick über die Treiber-Toolchain}
-Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_architecture} zeigt die drei Ebenen die entwickelt werden. 
+Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_architecture} zeigt die drei Ebenen die entwickelt werden. Die Bibliotheken 
 
 \begin{figure}[!htb]
 	\begin{center}
@@ -158,19 +153,23 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 	\end{center}
 \end{figure}
 
-
 \section{Linux-Treiber-Modul: modzpu}
 % TODO: verfassen
 
+\pagebreak
 \section{Programmierung des ZPU: Die libzpu}
 % TODO: erweitern
 Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann.
 
-\subsection{Bibliotheksfunktionen}
+\subsection{Installation}
 
+\subsection{Bibliotheksfunktionen}
+% TODO: zpuload vorstellen 
 \subsubsection{Dateien Laden}
 
 \subsubsection{ZPU Starten und Stoppen}
+
+\subsubsection{}
 
 \subsection{Python-Bindings}
 
@@ -371,6 +370,8 @@ for (j = 0; j < x->ihr_length; j += w)
 	*(target) = v;
 }
 \end{lstlisting}
+
+\section{Fazit}
 
 \pagebreak % content ends here
 
