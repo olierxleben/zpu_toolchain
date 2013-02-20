@@ -17,6 +17,7 @@
 \usepackage{tikz}
 \usepackage{booktabs}
 \usepackage{enumitem}
+
 \include{lib/jurabib}
 \bibliographystyle{jurabib}
 
@@ -42,6 +43,12 @@
 	framexrightmargin=5pt,
 	framexbottommargin=4pt,
 	showstringspaces=false				% visualize spaces in strings        
+}
+
+\lstset{
+  literate={ö}{{\"o}}1
+           {ä}{{\"a}}1
+           {ü}{{\"u}}1
 }
  
 \lstloadlanguages{% Check docs for further languages ...
@@ -159,6 +166,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 
 \pagebreak
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
+\label{chapter_libcintelhex}
 
 Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eigene Programmbibliothek ausgegliedert. Der folgende Abschnitt beschreibt zunächst das Intel HEX-Datenformat, erläutert anschließend Installation und Schnittstellen der (im Rahmen dieser Arbeit entstandenen) cintelhex-Bibliothek und erklärt die dort verwendeten Algorithmen.
 
@@ -358,6 +366,8 @@ for (j = 0; j < x->ihr_length; j += w)
 
 \pagebreak
 \section{Programmierung der ZPU: Die libzpu}
+\label{chapter_libzpu}
+
 % TODO: erweitern
 Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann. \\
 \\
@@ -412,6 +422,51 @@ int zpu_start();
 \subsubsection{}
 
 \subsection{Python-Bindings}
+
+\pagebreak
+\section{Anwenderprogramme}
+
+Zur Steuerung des ZPU-Boards wurden schließlich die Werkzeuge \emph{zpuload}   und \emph{zpuio} entwickelt. Das Paket liegt dieser Arbeit auf Datenträger bei, und befindet sich im Verzeichnis \texttt{apps/zputools}.
+
+\subsection{Installation}
+
+\emph{zpuload} und \emph{zpuio} gehören beide zum \emph{zputools}-Paket, können also gemeinsam installiert werden. Wie bei den anderen im Rahmen dieser Arbeit entstandenen Pakete, reicht auch hier der übliche Dreizeiler zur Installation aus:
+
+\begin{lstlisting}[caption=Installation der zputools-Werkzeuge]
+> ./configure # optional mit --prefix=...
+> make
+> make install
+\end{lstlisting}
+
+Bei der Installation werden die ausführbaren Programme \emph{zpuload} und \emph{zpuio} (abhängig vom prefix) nach \texttt{/usr/local/bin} kopiert.
+
+Die \emph{zputools} benötigen einen GCC, die C-Standardbibliothek, sowie eine installierte cintelhex-Bibliothek (siehe Abschnitt \ref{chapter_libcintelhex}) und eine installierte zpu-Bibliothek (siehe Abschnitt \ref{chapter_libzpu}). Das \emph{configure}-Skript überprüft diese Abhängigkeiten automatisch.
+
+\subsection{Programme laden mit zpuload}
+
+Das \emph{zpuload}-Programm verwendet die Funktionen der \emph{cintelhex}- und \emph{zpu}-Bibliotheken, um ein neues Programm in den ZPU-Prozessor zu laden.
+
+Hierzu wird per \texttt{zpu\_load\_from\_file(file)}-Methode ein neues Programm in den RAM der ZPU geladen (diese Methode versetzt die ZPU zuvor implizit in des Reset-Modus und startet sie anschließend wieder).
+
+\begin{lstlisting}[caption=Verwendung des zpuload-Werkzeugs]
+> /usr/local/bin/zpuload input.hex
+Loading program from "input.hex"...
+Loaded program.
+\end{lstlisting}
+
+\subsection{Ein- und Ausgabe mit zpuio}
+
+Das \emph{zpuio}-Werkzeug dient dazu, Ein- und Ausgaben an den ZPU-Prozessor zu übermitteln. Dieses Programm ist vor allem als interaktive Schnittstelle gedacht.
+
+\begin{lstlisting}[caption=Verwendung des zpuio-Werkzeugs]
+> /usr/local/bin/zpuio
+output (11) > Hello World
+input > abcd
+output (4) > Abcd
+input >
+\end{lstlisting}
+
+Neben der Verwendung des \emph{zpuio}-Werkzeugs kann auch direkt in die/aus der Gerätedatei \emph{/dev/zpu} geschrieben und gelesen werden.
 
 \pagebreak
 \section{Fazit}
