@@ -33,16 +33,24 @@
 \begin{document}
 	\frame{\titlepage}
 	
+	\begin{frame}{Aufbau der Hardware}
+		\begin{center}
+		\includegraphics[height=0.9\textheight]{images/zpu_architecture.png}
+		\end{center}
+	\end{frame}
+	
 	\begin{frame}{Grundideen}
 		\begin{itemize}
-			\item Aufteilung des Projekts in unabhängige Module, Bibliotheken und Anwendungen.
-			\item Parsing der Intel HEX-Dateien und Kommunikation mit dem ZPU-Treiber in jeweils eigene Bibliotheken, die dann aus Anwendungen heraus genutzt werden.
-			\item Die erstellten Bibliotheken sind anwendungsunabhängig und können später auch in Drittanwendungen verwendet werden.
+			\item Aufteilung des Projekts in \textbf{unabhängige Module}, Bibliotheken und Anwendungen.
+			\item Parsing der Intel HEX-Dateien und Kommunikation mit dem ZPU-Treiber in jeweils \textbf{eigene Bibliotheken}, die dann aus Anwendungen heraus genutzt werden.
+			\item Die erstellten Bibliotheken sind \textbf{anwendungsunabhängig} und können später auch in Drittanwendungen verwendet werden.
 		\end{itemize}
 	\end{frame}
 
 	\begin{frame}{Architekturentwurf (1)}
+	\begin{center}
 		\include{snippets/archOverview}
+	\end{center}
 	\end{frame}
 	
 	\begin{frame}{Architekturentwurf (2)}
@@ -154,22 +162,15 @@ static void write(/* ... */)
 		\end{lstlisting}
 	\end{frame}
 	
-	\begin{frame}{Die \texttt{libzpu}-Bibliothek}
-	
-		Die \texttt{libzpu}-Bibliothek soll im Userspace stark abstrahierte Methoden zur Steuerung der ZPU zur Verfügung stellen. Unterstützte Funktionen sind das \textbf{Laden neuer Programme} und \textbf{Ein- und Ausgabebehandlung}.
-		
-		Die Methoden werden in \texttt{zpu.h} definiert.
-		
-		\begin{description}[style=nextline,font=\ttfamily\bfseries]
-			\item[int zpu\_from\_hexfile(char* filename)] Lädt ein ZPU-Programm aus einer Intel HEX-Datei in die ZPU. Liefert im Erfolgsfall \texttt{0} zurück. 
-			\item[int zpu\_from\_binfile(char* filename)]
-			Wie oben, nur aus einer Binärdatei.
-			\item[int zpu\_read(char* buf, int n, int blk)]
-			Liest \texttt{n} Zeichen aus der \textbf{Standardausgabe} der ZPU. \texttt{blk} steuert, ob der Zugriff blockieren soll.
-			\item[int zpu\_write(char* buf, int n)]
-			Schreibt \texttt{n} Zeichen aus \texttt{buf} auf die \textbf{Standardeingabe} der ZPU.
-		\end{description}
+	\begin{frame}{Vorgehen}
+		\begin{itemize}
+			\item Testgetriebene Entwicklung der Bibliotheken und Anwenderprogramme (z.B. mit CUnit\footnote{\url{http://cunit.sourceforge.net/}})
+			\item Erstellung portabler Build-Skripte mit \texttt{autoscan} und \texttt{autoconf}.\footnote{\url{http://www.gnu.org/software/autoconf/}}
+			\item Git\footnote{\url{http://git-scm.com/}} als Versionskontrollsystem. Zentrale Verwaltung auf Github, transparente Entwicklung. Organisation der erstellten Komponenten in unabhängigen Git-Repositories.
+		\end{itemize}
 	\end{frame}
+	
+	\section{Die libintelhex-Bibliothek}
 	
 	\begin{frame}{Die \texttt{libintelhex}-Bibliotek: API}
 		Die \texttt{libintelhex}-Bibliothek stellt Methoden zum Einlesen von Intel HEX-Dateien zur Verfügung.
@@ -179,8 +180,8 @@ static void write(/* ... */)
 			Liest Binärdaten aus einer Dateieingabe ein.
 			\item[struct *ihex\_recordset ihex\_rs\_from\_str(char* input)]
 			Liest Binärdaten aus einer Zeichenkette ein.
-			\item[int ihex\_mem\_copy(struct *ihex\_records rec, void* dst, uint\_t l)]
-			Kopiert Daten an eine beliebige (durch \texttt{dst}) angegebene Position. \texttt{l} ist die Größe des Ziel-Speicherbereichs.
+			\item[int ihex\_mem\_copy(struct *ihex\_records rec, void* dst, uint\_t l, ihex\_width\_t w, ihex\_byteorder\_t o)]
+			Kopiert Daten an eine beliebige (durch \texttt{dst}) angegebene Position. \texttt{l} ist die Größe des Ziel-Speicherbereichs. \texttt{w} gibt die Art des Speicherzugriffs an (bei der ZPU 32 Bit) und \texttt{o} die Byte-Reihenfolge.
 		\end{description}
 	\end{frame}
 	
@@ -207,25 +208,71 @@ typedef struct ihex_recordset {
 		\end{center}
 	\end{frame}
 	
-	\begin{frame}{Vorgehen}
+	\begin{frame}[fragile]{Anwendungsbeispiel}
+		\begin{lstlisting}[language=C,breaklines=true,numbers=left]
+#include <stdlib.h>
+#include <cintelhex.h>
+
+int main()
+{
+  ihex_recordset_t* r = ihex_rs_from_file("in.hex");
+  void*             d = malloc(8192);
+	
+  if (r != NULL)
+  {
+    return ihex_mem_copy(r, d, 8192, IHEX_WIDTH_32BIT, IHEX_ORDER_BIGENDIAN);
+  }
+  return ihex_errno();
+}
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		Die \textbf{cIntelHEX}-Bibliothek ist \textbf{Open Source} (GNU LGPL):
+		
 		\begin{itemize}
-			\item Testgetriebene Entwicklung der Bibliotheken und Anwenderprogramme (z.B. mit CUnit\footnote{\url{http://cunit.sourceforge.net/}})
-			\item Erstellung portabler Build-Skripte mit \texttt{autoscan} und \texttt{autoconf}.\footnote{\url{http://www.gnu.org/software/autoconf/}}
-			\item Git\footnote{\url{http://git-scm.com/}} als Versionskontrollsystem. Zentrale Verwaltung auf Github, transparente Entwicklung. Organisation der erstellten Komponenten in unabhängigen Git-Repositories.
+			\item \url{https://github.com/martin-helmich/libcintelhex}
 		\end{itemize}
 	\end{frame}
 	
+	\section{Die libzpu-Bibliothek}
+	
+	\begin{frame}{Die \texttt{libzpu}-Bibliothek}
+	
+		Die \texttt{libzpu}-Bibliothek soll im Userspace stark abstrahierte Methoden zur Steuerung der ZPU zur Verfügung stellen. Unterstützte Funktionen sind das \textbf{Laden neuer Programme} und \textbf{Ein- und Ausgabebehandlung}.
+		
+		Die Methoden werden in \texttt{zpu.h} definiert.
+		
+		\begin{description}[style=nextline,font=\ttfamily\bfseries]
+			\item[int zpu\_from\_hexfile(char* filename)] Lädt ein ZPU-Programm aus einer Intel HEX-Datei in die ZPU. Liefert im Erfolgsfall \texttt{0} zurück. 
+			\item[int zpu\_from\_binfile(char* filename)]
+			Wie oben, nur aus einer Binärdatei.
+			\item[int zpu\_read(char* buf, int n, int blk)]
+			Liest \texttt{n} Zeichen aus der \textbf{Standardausgabe} der ZPU. \texttt{blk} steuert, ob der Zugriff blockieren soll.
+			\item[int zpu\_write(char* buf, int n)]
+			Schreibt \texttt{n} Zeichen aus \texttt{buf} auf die \textbf{Standardeingabe} der ZPU.
+		\end{description}
+	\end{frame}
+	
+	\subsection{Userspace-Programme}
+	
+	\begin{frame}[fragile]{Userspace-Programme}
+		\begin{lstlisting}[numbers=left,frame=single]
+			> zpuload input.hex
+			Loading program "input.hex"...
+			Loaded program.
+		\end{lstlisting}
+		
+		\begin{lstlisting}[numbers=left,frame=single]
+			> zpuio
+			output (11) > Hallo Welt!
+			input > Hallo auch.
+			output (11) > HAllo Auch.
+			intput >
+		\end{lstlisting}
+	\end{frame}
+	
 	\begin{frame}{Would-Be-Nice-Ideen}
-		\begin{itemize}
-			\item Laden der ZPU mit initialem Programm beim Booten. Mögliches Vorgehen? Eventuelle Probleme beim FS-Zugriff aus dem Kernel?
-			\item Freigabe einzelner Komponenten (\texttt{libintelhex}) als OSS?
-			\item Portable Build-Skripte (evtl. mit \texttt{automake} und \texttt{autoconf}).
-			\item Paketierung (DEB oder RPM) zur einfachen Verteilung und Installation
-			\item Manpages
-			\item Python-/Ruby-Bindings für die erstellten Bibliotheken? Anwenderprogramme in Python/Ruby?
-			\item Automatisches Erstellen von Gerätedateien mit \texttt{udev}.\footnote{\url{http://mohammadthalif.wordpress.com/2010/01/02/udev-rules-to-create-a-dev-node-when-inserting-a-module/}}
-			\item Intel HEX-Dateien mit 32 statt 16 Bit.
-			\item To be continued...
-		\end{itemize}
+	
 	\end{frame}
 \end{document}
