@@ -90,7 +90,7 @@
 	Ingenieurswissenschaften und Informatik \\%
 	Informatik - Mobile und Verteilte Anwendungen }
 
-\title{\includegraphics[scale=0.75,keepaspectratio]{img/hs_os.png}\linebreak \linebreak Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}
+\title{\includegraphics[scale=0.75,keepaspectratio]{images/hs_os.png}\linebreak \linebreak Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}
 \subtitle{Am Beispiel einer ZPU unter Linux}
 
 \maketitle
@@ -133,9 +133,8 @@ Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stelle
 \pagebreak
 
 \section{Architektur}
-% TODO: erweitern PCI Board
  
-\subsection{ZPU und PCI-Board}
+\subsection{ZPU}
 Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe eines Soft-CPU, bzw. dem ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Arbeitslast dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung des ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
@@ -150,6 +149,16 @@ Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zw
 		\include{snippets/zpuIO}
 		\caption{ZPU-Ein und Ausgabe}
 		\label{zpu_io}
+	\end{center}
+\end{figure}
+
+Die Hardware-Architektur des ZPU
+
+\begin{figure}[!htb]
+	\begin{center}
+		\includegraphics[width=0.9\textwidth]{images/zpu_architecture}
+		\caption{Architektur der ZPU}
+		\label{zpu_architecture}	
 	\end{center}
 \end{figure}
 
