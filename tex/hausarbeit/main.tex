@@ -142,23 +142,23 @@ Zur Programmierung des ZPU kann die GCC-Toolchain verwendet werden. Neben \texti
 Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos:}-Embbedded Operating System wird vom ZPU unterstützt. 
 
 % TODO: PCI Board Beschreibung überarbeiten
-Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige. 
-\begin{figure}[!htb]
-	\begin{center}
-		%include from external
-		\include{snippets/zpuIO}
-		\caption{ZPU-Ein und Ausgabe}
-		\label{zpu_io}
-	\end{center}
-\end{figure}
-
-Die Hardware-Architektur des ZPU
+Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige. \\
+Die Hardware-Architektur des ZPU lässt sich 
 
 \begin{figure}[!htb]
 	\begin{center}
 		\includegraphics[width=0.9\textwidth]{images/zpu_architecture}
 		\caption{Architektur der ZPU}
 		\label{zpu_architecture}	
+	\end{center}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{center}
+		%include from external
+		\include{snippets/zpuIO}
+		\caption{ZPU-Ein und Ausgabe}
+		\label{zpu_io}
 	\end{center}
 \end{figure}
 
