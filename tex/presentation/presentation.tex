@@ -39,6 +39,16 @@
 		\end{center}
 	\end{frame}
 	
+	\begin{frame}{Aufgabenstellung}
+		\begin{quote}
+			"`Mithilfe des zu erstellenden Treibers soll es möglich werden, das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit einer neuen Software zu laden. Dazu soll der Treiber einen IOCTL-Befehl zum Lesen uns Schreiben des Kontrollregisters und die mmap- Funktion zum Einblenden der Speicher bereitstellen.
+		\end{quote}
+			
+		\begin{quote}
+			Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein, über Applikationsprogramme Eingaben an stdin zu senden und Ausgaben von stdout zu lesen. Dazu soll der Treiber die write- und read-Funktion bereitstellen."'
+		\end{quote}
+	\end{frame}
+	
 	\begin{frame}{Grundideen}
 		\begin{itemize}
 			\item Aufteilung des Projekts in \textbf{unabhängige Module}, Bibliotheken und Anwendungen.
