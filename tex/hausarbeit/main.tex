@@ -19,6 +19,8 @@
 \usepackage{tikz}
 \usepackage{booktabs}
 \usepackage{enumitem}
+\usepackage{here} % picture positioning
+
 
 \include{lib/jurabib}
 \bibliographystyle{jurabib}
@@ -59,6 +61,39 @@
 	bash
 }
 
+% Directory Tree settings 
+\makeatletter
+\newcount\dirtree@lvl
+\newcount\dirtree@plvl
+\newcount\dirtree@clvl
+\def\dirtree@growth{%
+  \ifnum\tikznumberofcurrentchild=1\relax
+  \global\advance\dirtree@plvl by 1
+  \expandafter\xdef\csname dirtree@p@\the\dirtree@plvl\endcsname{\the\dirtree@lvl}
+  \fi
+  \global\advance\dirtree@lvl by 1\relax
+  \dirtree@clvl=\dirtree@lvl
+  \advance\dirtree@clvl by -\csname dirtree@p@\the\dirtree@plvl\endcsname
+  \pgf@xa=0.5cm\relax
+  \pgf@ya=-0.75cm\relax
+  \pgf@ya=\dirtree@clvl\pgf@ya
+  \pgftransformshift{\pgfqpoint{\the\pgf@xa}{\the\pgf@ya}}%
+  \ifnum\tikznumberofcurrentchild=\tikznumberofchildren
+  \global\advance\dirtree@plvl by -1
+  \fi
+}
+
+\tikzset{
+  dirtree/.style={
+    growth function=\dirtree@growth,
+    every node/.style={anchor=north},
+    every child node/.style={anchor=west},
+    edge from parent path={(\tikzparentnode\tikzparentanchor) |- (\tikzchildnode\tikzchildanchor)}
+  }
+}
+
+\makeatother
+
 \setlength{\parindent}{0pt}
 \setlength{\parskip}\medskipamount
 
@@ -97,7 +132,7 @@
 \thispagestyle{empty}
 \pagebreak
 \tableofcontents
-
+\thispagestyle{empty}
 \listoffigures
 
 \lstlistoflistings
@@ -135,6 +170,8 @@ Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stelle
 \section{Architektur}
  
 \subsection{ZPU}
+
+
 Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe eines Soft-CPU, bzw. dem ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Arbeitslast dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung des ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
@@ -142,18 +179,19 @@ Zur Programmierung des ZPU kann die GCC-Toolchain verwendet werden. Neben \texti
 Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos:}-Embbedded Operating System wird vom ZPU unterstützt. 
 
 % TODO: PCI Board Beschreibung überarbeiten
-Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige. \\
-Die Hardware-Architektur des ZPU lässt sich 
+Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
 
-\begin{figure}[!htb]
+\begin{figure}[H]
 	\begin{center}
 		\includegraphics[width=0.9\textwidth]{images/zpu_architecture}
 		\caption{Architektur der ZPU}
 		\label{zpu_architecture}	
 	\end{center}
 \end{figure}
+% TODO: überarbeiten
+Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos je nach Lage zum Empfangen oder Senden gedacht sind. Aus Sicht der ZPU werden Daten gesendet, wenn diese im Empfangs-Fifo landen und empfangen wenn diese in das Sende-Fifo geschrieben werden.  
 
-\begin{figure}[!htb]
+\begin{figure}[H]
 	\begin{center}
 		%include from external
 		\include{snippets/zpuIO}
@@ -163,23 +201,47 @@ Die Hardware-Architektur des ZPU lässt sich
 \end{figure}
 
 \subsection{Überblick über die Treiber-Toolchain}
-Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_architecture} zeigt die drei Ebenen die entwickelt werden. Die Bibliotheken 
+Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden. Die Bibliotheken 
 
 \begin{figure}[!htb]
 	\begin{center}
 		\include{snippets/archOverview}
 		\caption{Überblick ZPU-Toolchain}
-		\label{zpu_architecture}	
+		\label{zpu_overview}	
 	\end{center}
 \end{figure}
 
+\pagebreak
 \section{Linux-Treiber-Modul: modzpu}
 % TODO: verfassen
-\subsection{Überblick über das Modul}
+Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. 
+
+Das Treibermodul ist wie folgt aufgebaut:
+
+\begin{tikzpicture}[dirtree]
+\node{module} 
+    child { node {scripts}
+            child { node {load.sh} }
+            child { node {unload.sh} }
+    }
+    child { node {zpu\_commands.h} }
+    child { node {modzpu.h} }
+    child { node {modzpu.c} }
+    child { node {fifo.c} }
+    child { node {zpu\_io.c} }
+    child { node {zpu\_irq.c} }
+    child { node {zpu\_mem.c} }
+    child { node {zpu\_open.c} }
+    child { node {Makefile} }
+    
+    ; % finish nodes
+\end{tikzpicture}
 \subsection{Initialisieren des Moduls}
 \subsection{MMAP}
 \subsection{Read Write}
 \subsection{IOCTRL}
+
+
 
 \pagebreak
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
