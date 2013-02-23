@@ -103,73 +103,30 @@
 	\end{columns}
 	\end{frame}
 	
-	\begin{frame}{Das \texttt{zpu}-Modul: Ein- und Ausgabe}{Offene Punkte}
-		\begin{itemize}
-			\item Bei blockierendem Schreibzugriff: Blockieren, bis Daten in Software-FIFO geschrieben, oder sogar bis in Hardware-FIFO geschrieben?
-			\item Mehrfaches Öffnen erlauben? Nur einmal zum Lesen und Schreiben, oder einmal zum Schreiben und mehrfach zum Lesen, oder je einmal zum Lesen und zum Schreiben?
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Öffnen und Schließen}{(C-naher Pseudocode)}
-		\begin{lstlisting}[language=C]
-		static void open(/* ... */)
-		{
-		    down(&semaphore);
-		}
-		
-		static void close(/* ... */)
-		{
-		    up(&semaphore);
-		}
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Lesen und Schreiben}{(C-naher Pseudocode)}
-		\begin{lstlisting}[language=C]
-static void read(/* ... */)
-{
-    if (local_rfifo_empty())
-    {
-        if (blocking)
-        {
-            enable_write_interrupt();
-            wait_for_event(local_rfifo_empty() == 0);
-        }
-        else return -EAGAIN;
-    }
-		    
-    copy_local_rfifo_to_user(/*...*/);
-    enable_write_interrupt();
-		    
-    return read_bytes;
+	\begin{frame}[fragile]{Ein- und Ausgabe}
+	\begin{lstlisting}[language=C,basicstyle=\footnotesize\ttfamily]
+	static ssize_t zpu_chr_write (struct file *filep,
+	  const char __user *data, size_t count, loff_t *offset) {
+  fifo_t       *f = &(zpu_io_stdin);
+  unsigned int  n;
+
+  if (FIFO_FULL(f)) {
+    ZPU_ENABLE_STDIN_IR();
+
+    if (filep->f_flags & O_NONBLOCK)
+      return -EAGAIN;
+    else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
+      return -EINTR;
+  }
+
+  /* Kopieren mit copy_from_user */
+
+  f->count = f->count + n;
+  ZPU_ENABLE_STDIN_IR();
+
+  return n;
 }
-		\end{lstlisting}
-	\end{frame}
-		
-	\begin{frame}[fragile]{Das \texttt{zpu}-Modul: Lesen und Schreiben}{(C-naher Pseudocode)}
-		\begin{lstlisting}[language=C,basicstyle=\footnotesize\ttfamily]
-static void write(/* ... */)
-{
-    if (local_wfifo_full())
-    {
-        if (blocking)
-        {
-            wait_for_event(local_wfifo_full() == 0);
-        }
-        else return -EAGAIN;
-    }
-		    
-    copy_local_wfifo_from_user(...);
-    enable_read_interrupt();
-		    
-    // Warten, bis wirklich in STDIN geschrieben wurde?
-    if (blocking)
-    {
-        wait_for_event(all_copied_to_pci());
-    }
-    return written_bytes;
-}
-		\end{lstlisting}
+	\end{lstlisting}
 	\end{frame}
 	
 	\begin{frame}{Vorgehen}
