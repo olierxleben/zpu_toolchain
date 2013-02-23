@@ -64,7 +64,6 @@ DECLARE_MUTEX(mutex_r);
 // METHODEN-IMPLEMENTIERUNGEN (INITIALISIERUNG UND CLEANUP)
 //
 
-
 static int __init init(void)
 {
 	int r;
