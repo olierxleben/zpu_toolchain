@@ -239,8 +239,65 @@ Das Treibermodul ist wie folgt aufgebaut:
     
     ; % finish nodes
 \end{tikzpicture}
+\subsection{Installation}
+
+Das Treibermodul lässt sich einfach über ein Makefile installieren, bzw. deinstallieren. Es befindet sich im Wurzelverzeichnis des Treibermoduls und benötigt die sich im Unterverzeichnis  \textit{scripts} befindenen Bash-Skripte \textit{load.sh} und \textit{unload.sh}. Die Bash-Skripte sind für das Laden und Entladen des Treibermoduls aus dem Kernel verantwortlich.
+Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. Anzumerken ist, dass der Eingriff in den Kernel und das Laden/Entladen des Moduls in den Kernel, bzw. aus dem Kernel, root-Rechte am Sytem benötigt. Äquivalent zum Listing \ref{modzpu_install} kann das Modul mittels \texttt{make uninstall} wieder entladen werden. 
+
+\begin{lstlisting}[label=modzpu_install,language=bash, caption=Installation des Treibermoduls]
+> cd to/the/module/folder
+> su # optional, if not root
+> make
+> make install
+\end{lstlisting}
+
+% TODO load unload skript beschreiben?!
+
 \subsection{Initialisieren des Moduls}
-% TODO: Makefile und load/unload 
+
+Die Initialisierungsfunktion ist in der \textit{modzpu.h} deklariert und in der \textit{modzpu.c} implementiert. Das Listing \ref{modzpu_initfunc} zeigt die Implementierung der \textit{init}-Funktion.
+
+\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_initfunc, caption=modzpu Init-Funktion][h!]
+static int __init init(void)
+{
+	int r;
+	struct pci_driver *d = &(mypci_driver);
+
+	d->name     = "zpu";
+	d->id_table = (const struct pci_device_id*) &(id_table);
+	d->probe    = mypci_probe;
+	d->remove   = mypci_remove;
+
+	if ((r = pci_register_driver(d)) != 0)
+	{
+		OUT_WARN("Could not register ZPU device driver.\n");
+		return r;
+	}
+
+	OUT_DBG("Initialized module.\n");
+
+	return 0;
+}
+\end{lstlisting}
+
+Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} gehalten. Die Struktur ist in \textit{linux/pci.h} deklariert und wird zur Registrierung der PCI-Hardware im Kernel benötigt (Vgl. siehe \cite{script_hwstp}, Seite 253).
+ 
+Zur Fehlersicherung wird der Rückgabewert der Funktion \texttt{pci\_register\_driver(d)} überprüft und ggf. wird der Wert, sollte er nicht 0 sein, zurückgeliefert. 
+
+Ausgaben erscheinen nur, wenn das DEBUG-Flag (siehe \textit{modzpu.h}) gesetzt ist. 
+\subsection{Modul-Cleanup}
+% TODO: ausbauen, pci_unregister_driver beschreiben?!
+Die Struktur \texttt{\&mypci\_driver} wird der Kernelfunktion \textit{pci\_unregister\_driver} übergeben um das Modul aus dem Kernel zu entladen. 
+
+\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
+void __exit cleanup(void)
+{
+	pci_unregister_driver(&mypci_driver);
+	OUT_DBG("Unregistered PCI driver.\n");
+}
+\end{lstlisting}
+
+
 \subsection{MMAP}
 
 
