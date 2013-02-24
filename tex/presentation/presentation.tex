@@ -139,6 +139,21 @@
 	
 	\section{Die libintelhex-Bibliothek}
 	
+	\begin{frame}[fragile]{Das Intel HEX-Format}
+		\begin{lstlisting}[frame=single]
+			:1000000000000000000000000000000000000000F0
+:0400100000000000EC
+:100400000B0B0B98B02D0B0B0B8880040000000029
+:1004100000000000000000000000000000000000DC
+// ...
+:1010E200000008D9000008D9000008D9000008D97A
+:1010F200000008D9000008D9000008D9000008D96A
+:0C110200000008D9000008D9000008D93E
+:0400000300000400F5
+:00000001FF
+		\end{lstlisting}
+	\end{frame}
+	
 	\begin{frame}{Die \texttt{libintelhex}-Bibliotek: API}
 		Die \texttt{libintelhex}-Bibliothek stellt Methoden zum Einlesen von Intel HEX-Dateien zur Verfügung.
 		
