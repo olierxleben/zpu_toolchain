@@ -29,7 +29,6 @@
 *.synctex.gz
 *.vrb
 *.nav
-*.pdf
 
 tex/main.pdf
 
