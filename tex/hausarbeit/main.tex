@@ -75,7 +75,7 @@
   \dirtree@clvl=\dirtree@lvl
   \advance\dirtree@clvl by -\csname dirtree@p@\the\dirtree@plvl\endcsname
   \pgf@xa=0.5cm\relax
-  \pgf@ya=-0.75cm\relax
+  \pgf@ya=-0.5cm\relax
   \pgf@ya=\dirtree@clvl\pgf@ya
   \pgftransformshift{\pgfqpoint{\the\pgf@xa}{\the\pgf@ya}}%
   \ifnum\tikznumberofcurrentchild=\tikznumberofchildren
@@ -218,7 +218,9 @@ Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für
 
 Das Treibermodul ist wie folgt aufgebaut:
 
-\begin{tikzpicture}[dirtree]
+\begin{figure}[H]
+\begin{center}
+\frame{\begin{tikzpicture}[dirtree]
 \node{module} 
     child { node {scripts}
             child { node {load.sh} }
@@ -235,7 +237,11 @@ Das Treibermodul ist wie folgt aufgebaut:
     child { node {Makefile} }
     
     ; % finish nodes
-\end{tikzpicture}
+\end{tikzpicture}}
+\end{center}
+\caption{Dateien des ZPU-Kernelmoduls.}
+\end{figure}
+
 \subsection{Initialisieren des Moduls}
 \subsection{MMAP}
 \subsection{Read Write}
