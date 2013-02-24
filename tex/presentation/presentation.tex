@@ -40,13 +40,11 @@
 	\end{frame}
 	
 	\begin{frame}{Aufgabenstellung}
-		\begin{quote}
-			"`Mithilfe des zu erstellenden Treibers soll es möglich werden, das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit einer neuen Software zu laden. Dazu soll der Treiber einen IOCTL-Befehl zum Lesen uns Schreiben des Kontrollregisters und die mmap- Funktion zum Einblenden der Speicher bereitstellen.
-		\end{quote}
-			
-		\begin{quote}
-			Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein, über Applikationsprogramme Eingaben an stdin zu senden und Ausgaben von stdout zu lesen. Dazu soll der Treiber die write- und read-Funktion bereitstellen."'
-		\end{quote}
+		\begin{itemize}
+			\item \textbf{Zurücksetzen} des Prozessorsystems per \texttt{ioctl}-Befehl
+			\item Einblenden des RAMs in den Userspace-Speicher per \texttt{mmap}, um \textbf{neue Software} in das System laden zu können.
+			\item Senden von Eingaben an den \textbf{stdin}-Buffer und Lesen von Ausgaben aus dem \textbf{stdout}-Buffer per \texttt{read}- und \texttt{write}-Methoden.
+		\end{itemize}
 	\end{frame}
 	
 	\begin{frame}{Grundideen}
