@@ -624,6 +624,12 @@ Neben der Verwendung des \emph{zpuio}-Werkzeugs kann auch direkt in/aus der Ger�
 \pagebreak
 \section{Fazit}
 
+Mit den im Rahmen dieser Arbeit entwickelten Kernel-Module, Bibliotheken und Anwenderprogramme steht eine einfach benutzbare und gut erweiterbare Toolchain zur Arbeit mit einem ZPU-Board zur Verfügung.
+
+Um die Arbeit mit diesen Werkzeugen weiter zu vereinfachen, wäre in einer fortführenden Arbeit beispielsweise möglich, über entsprechende udev-Regeln das Kernelmodul automatisch zu laden, die entsprechenden Gerätedateien zu erstellen. Zudem könnte über eine udev-Regel bereits beim Booten durch einen Aufruf des \textit{zpuload}-Programms eine initiale Firmware in die ZPU geladen werden.
+
+Um die Upgrade-Fähigkeit des Kernel-Moduls über mehrere Kernel-Versionen hinweg sicherzustellen, böte sich zudem die Verwendung des von Dell entwickelten DKMS-Frameworks an.\footnote{Vgl. \cite{dkms-ljournal}.}
+
 \pagebreak % content ends here
 
 \fancyhead[R]{}
