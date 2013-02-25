@@ -584,44 +584,36 @@ Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverze
 > make install
 \end{lstlisting}
  
-\subsection{Bibliotheksfunktionen}
-Die Methoden der libzpu können durch Einbindung der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden.
-Das Listing \ref{zpulibfuncs} zeigt einen Auszug mit den Funktionsköpfen der \textit{zpu.h}.
-Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. 
-\\
-Das Listing \ref{zpulibfuncs} zeigt einen Auszug mit den Funktionsköpfen der \textit{zpu.h}.
-% TODO: Beschreibung, Zeilen anpassen
-\begin{lstlisting}[language=C, firstnumber=44, label=zpulibfuncs, caption=zpulib-Bibliotheksfunktionen][h!]
+\subsection{Schnittstellenbeschreibung}
+Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
+%Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. 
 
-/// Load an Intel HEX formatted program into the ZPU
-/** This method loads a new program into the ZPU. The input file needs
- *  to be an Intel HEX formatted binary.
- *  Before loading the program, the ZPU is set into "reset" mode. After
- *  that, the new program is parsed and copied into the ZPU's ROM and
- *  the ZPU is set back into regular mode.
- *  @param filename The filename of the input Intel HEX file.
- *  @return         ZPU_ERR_OK on success, otherwise an error code. */
-zpu_error_t zpu_load_from_file(char* filename);
-
-/// Halt the ZPU.
-/** This method sets the ZPU into "reset" mode.
- *  @return ZPU_ERR_OK on success, otherwise an error code. */
-int zpu_stop();
-
-/// Start the ZPU, if halted.
-/** This method sets the ZPU back into regular mode, if it was stopped
- *  earlier. 
- *  @return ZPU_ERR_OK on success, otherwise an error code. */
-int zpu_start();
-
-\end{lstlisting}
+\begin{description}[style=unboxed]
+	\item[zpu\_error\_t zpu\_load\_from\_file(char* filename);] 
+	Die Methode wird verwendet um eine neues Programm in die ZPU zu laden. Vor dem Laden des Programms wird die ZPU in in den sog. \textit{reset}-Modus gesetzt. Erst danach wird das zu ladene Programm von der Intel Hex Bibliothek geparsed und in den ROM der ZPU kopiert. Die Programm-Datei muss vom Typ INTEL Hex sein. 
+	
+	\item[int zpu\_stop();]
+	Versetzt die ZPU in den \textit{reset}-Modus. Liefert \texttt{ZPU\_ERR\_OK} bei Erfolg zurück. Andernfalls einen Error Code. 
+	
+	\item[int zpu\_start();]
+	Versetzt die ZPU aus denm \textit{reset}-Modus in den regulären Betriebszustand zurück. Die Methode liefert \texttt{ZPU\_ERR\_OK} bei Erfolg zurück. Andernfalls einen Error Code.
+	
+	\item[zpu\_error\_t zpu\_errno();]
+	Eine Hilfsmethode zum Debuggen von Anwenderprogrammen. Sie liefert die Nummer des zuletzt aufgetretenen Fehlers zurück. 
+	
+	\item[char* zpu\_error();]
+	Eine Hilfesmethode zum Debuggen von Anwenderprogrammen. Sie liefert den zuletzt aufgetretenen Fehler zurück. 
+\end{description}
 
 % TODO: zpuload vorstellen 
-\subsubsection{Dateien Laden}
 
-\subsubsection{ZPU Starten und Stoppen}
+\subsection{Fehlercodes}
 
-\subsubsection{}
+%\subsubsection{Dateien Laden}
+
+%\subsubsection{ZPU Starten und Stoppen}
+
+%\subsubsection{}
 
 %\subsection{Python-Bindings}
 
