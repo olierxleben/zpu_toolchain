@@ -176,7 +176,7 @@ Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stelle
 \subsection{ZPU}
 
 
-Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe eines Soft-CPU, bzw. dem ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Arbeitslast dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
+Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
 
@@ -197,16 +197,6 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 	\end{center}
 \end{figure}
 
-
-\begin{figure}[H]
-	\begin{center}
-		%include from external
-		\include{snippets/zpuIO}
-		\caption{ZPU-Ein und Ausgabe}
-		\label{zpu_io}
-	\end{center}
-\end{figure}
-
 \subsection{Überblick über die Treiber-Toolchain}
 Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden. Die Bibliotheken 
 
@@ -221,9 +211,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 \pagebreak
 \section{Linux-Treiber-Modul: modzpu}
 % TODO: verfassen
-Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. 
-
-Das Treibermodul ist wie folgt aufgebaut:
+Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
 
 \begin{figure}[H]
 \begin{center}
@@ -244,17 +232,19 @@ Das Treibermodul ist wie folgt aufgebaut:
     child { node {Makefile} }
     
     ; % finish nodes
+
 \end{tikzpicture}}
 \end{center}
 \caption{Dateien des ZPU-Kernelmoduls.}
 \end{figure}
+
 
 \subsection{Installation}
 
 Das Treibermodul lässt sich einfach über ein Makefile installieren, bzw. deinstallieren. Es befindet sich im Wurzelverzeichnis des Treibermoduls und benötigt die sich im Unterverzeichnis  \textit{scripts} befindenen Bash-Skripte \textit{load.sh} und \textit{unload.sh}. Die Bash-Skripte sind für das Laden und Entladen des Treibermoduls aus dem Kernel verantwortlich.
 Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. Anzumerken ist, dass der Eingriff in den Kernel und das Laden/Entladen des Moduls in den Kernel, bzw. aus dem Kernel, root-Rechte am Sytem benötigt. Äquivalent zum Listing \ref{modzpu_install} kann das Modul mittels \texttt{make uninstall} wieder entladen werden. 
 
-\begin{lstlisting}[label=modzpu_install,language=bash, caption=Installation des Treibermoduls]
+\begin{lstlisting}[label=modzpu_install,language=bash, caption=Installation des Treibermoduls][!h]
 > cd to/the/module/folder
 > su # optional, if not root
 > make
@@ -307,13 +297,72 @@ void __exit cleanup(void)
 }
 \end{lstlisting}
 
+\subsection{Speicher Mapping}
 
-\subsection{MMAP}
+\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
 
+\end{lstlisting}
 
-\subsection{Read Write}
 \subsection{IOCTRL}
 
+
+\subsection{Lese- und Schreibzugriffe}
+
+\begin{figure}[H]
+	\begin{center}
+		%include from external
+		\include{snippets/zpuIO}
+		\caption{ZPU-Ein und Ausgabe}
+		\label{zpu_io}
+	\end{center}
+\end{figure}
+
+Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibernmodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware holen.
+
+\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
+static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
+{
+	fifo_t			*f	= &(zpu_io_stdin);
+	unsigned int	n;
+	
+	if (FIFO_FULL(f))
+	{
+		ZPU_ENABLE_STDIN_IR();
+	
+		if (filep->f_flags & O_NONBLOCK)
+		{
+			return -EAGAIN;
+		}
+		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
+		{
+			return -EINTR;
+		}
+	}
+	
+	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
+	
+	if (f->write + n <= f->size)
+	{
+		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
+		f->write = (f->write + n) % f->size;
+	}
+	else
+	{
+		unsigned int size1 = (f->size - f->write);
+		unsigned int size2 = (n - size1);
+		
+		if (copy_from_user(f->data + f->write, data, size1) +
+		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
+		
+		f->write = size2;
+	}
+	
+	f->count = f->count + n;
+	ZPU_ENABLE_STDIN_IR();
+	
+	return n;
+}
+\end{lstlisting}
 
 
 \pagebreak
@@ -536,11 +585,11 @@ Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverze
 \end{lstlisting}
  
 \subsection{Bibliotheksfunktionen}
-Die Methoden der libzpu können durch Einbindung der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. \\
-Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden.
-
+Die Methoden der libzpu können durch Einbindung der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden.
 Das Listing \ref{zpulibfuncs} zeigt einen Auszug mit den Funktionsköpfen der \textit{zpu.h}.
-
+Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. 
+\\
+Das Listing \ref{zpulibfuncs} zeigt einen Auszug mit den Funktionsköpfen der \textit{zpu.h}.
 % TODO: Beschreibung, Zeilen anpassen
 \begin{lstlisting}[language=C, firstnumber=44, label=zpulibfuncs, caption=zpulib-Bibliotheksfunktionen][h!]
 
