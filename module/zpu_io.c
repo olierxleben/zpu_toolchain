@@ -1,7 +1,20 @@
+/**
+ * zpu_io.c
+ *
+ * function collection for reading and writing zpu-fifos used by modzpu
+ *
+ * oliver.erxleben@hs-osnabrueck.de
+ * martin.helmlich@hs-osnabrueck.de
+ * 
+ */
+	 
+/**
+ * TODO: Add method description
+ */	 
 static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
 {
-	fifo_t       *f = &(zpu_io_stdin);
-	unsigned int  n;
+	fifo_t			*f	= &(zpu_io_stdin);
+	unsigned int	n;
 	
 	if (FIFO_FULL(f))
 	{
@@ -9,11 +22,11 @@ static ssize_t mychr_write (struct file *filep, const char __user *data, size_t 
 	
 		if (filep->f_flags & O_NONBLOCK)
 		{
-			return -EAGAIN;
+			return -EAGAIN; // return with "try again"
 		}
 		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
 		{
-			return -EINTR;
+			return -EINTR; // return with 
 		}
 	}
 	
@@ -41,6 +54,9 @@ static ssize_t mychr_write (struct file *filep, const char __user *data, size_t 
 	return n;
 }
 
+/*
+ * TODO: Add Method description
+ */
 static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count, loff_t *offset)
 {
 	fifo_t *f = &(zpu_io_stdout);
