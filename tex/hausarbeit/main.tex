@@ -1,8 +1,6 @@
 % Oliver Erxleben, Martin Helmich
 % Hardwarenahe System und Treiberprogrammierung
 %
-% TODO: LibCIntelhex nach oben, vor libzpu? ?
-
 \documentclass[11pt]{scrartcl}
 
 % own geometry
@@ -144,13 +142,10 @@
 \textbf{Zusammenfassung:}\\ 	
 Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences.
 
-Das Thema der Arbeit lautet \textit{Entwicklung eines Treiber und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt und zum anderen Bibliotheken und Wekrzeuge für die einfache Verwendung in Anwenderprogrammen zur Steuerung des ZPU entwickelt.
-
-Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt.
-
-Details über die Implementierung der Anwenderprogrammen wird aus Gründen der Lesbarkeit in den Anhang verschoben.
-
-% TODO Kernel Version ???
+Das Thema der Arbeit lautet \textit{Entwicklung eines Treibers und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt. Zum anderen werden Bibliotheken und Werkzeuge zur Verwendung in Anwenderprogrammen und zur Steuerung der ZPU beschrieben.
+\\
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt, bzw. auf das zugehörige Kapitel verwiesen.
+\\
 Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compiler GCC unter Linux (Kernel-Version 2.6.XX) verwendet. 
 \end{abstract}
 
@@ -198,7 +193,7 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 \end{figure}
 
 \subsection{Überblick über die Treiber-Toolchain}
-Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden. Die Bibliotheken 
+Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden.
 
 \begin{figure}[!htb]
 	\begin{center}
@@ -583,7 +578,7 @@ Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverze
 > make
 > make install
 \end{lstlisting}
- 
+
 \subsection{Schnittstellenbeschreibung}
 Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
 %Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. 
@@ -605,9 +600,32 @@ Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein 
 	Eine Hilfesmethode zum Debuggen von Anwenderprogrammen. Sie liefert den zuletzt aufgetretenen Fehler zurück. 
 \end{description}
 
-% TODO: zpuload vorstellen 
+% TODO: Datenstrukturen hinzufügen
+\subsection{Datenstrukturen}
+
 
 \subsection{Fehlercodes}
+
+Folgende Fehlerkonstanten werden in der \texttt{zpu.h} deklariert:
+% TODO: Beschreibungen hinzufügen
+\begin{description}
+    \item[\#define ZPU\_ERR\_OK              0x00]
+    
+    \item[\#define ZPU\_ERR\_PARSEERROR      0x01]
+    
+    \item[\#define ZPU\_ERR\_DEVFILEOPEN     0x02]
+    
+    \item[\#define ZPU\_ERR\_MMAP            0x03]
+    
+    \item[\#define ZPU\_ERR\_MEMCOPY         0x04]
+    
+    \item[\#define ZPU\_ERR\_COULDNOTSTOP    0x05]
+    
+    \item[\#define ZPU\_ERR\_COULDNOTSTART   0x06]
+    
+\end{description}
+
+
 
 %\subsubsection{Dateien Laden}
 
