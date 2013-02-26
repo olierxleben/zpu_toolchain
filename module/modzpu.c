@@ -91,11 +91,9 @@ void __exit cleanup(void)
 	OUT_DBG("Unregistered PCI driver.\n");
 }
 
-
 //
 // METHODEN-IMPLEMENTIERUNGEN (PCI-BEZOGEN)
 //
-
 
 static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
