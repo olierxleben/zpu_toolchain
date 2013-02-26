@@ -2,6 +2,7 @@
 #include "linux/vmalloc.h"
 #include "linux/types.h"
 
+// MACROs
 
 #define FIFO_EMPTY(fifop)     fifop->count == 0
 #define FIFO_FULL(fifop)      fifop->count == fifop->size
@@ -19,6 +20,7 @@ typedef struct {
 	wait_queue_head_t queue;
 } fifo_t;
 
+// functions declarations
 
 void fifo_init       (fifo_t *f, size_t s);
 void fifo_delete     (fifo_t *f);
