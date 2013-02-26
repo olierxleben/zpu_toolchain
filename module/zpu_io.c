@@ -1,7 +1,7 @@
 /**
  * zpu_io.c
  *
- * function collection for reading and writing zpu-fifos used by modzpu
+ * functions collection for reading and writing zpu-fifos used by modzpu
  *
  * oliver.erxleben@hs-osnabrueck.de
  * martin.helmlich@hs-osnabrueck.de
