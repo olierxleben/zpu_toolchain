@@ -184,6 +184,7 @@ Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zw
 Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. 
 Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos nach dem Ausgangspunkt (ZPU oder Linux-Kernel) zum Empfangen oder Senden genutzt werden. Aus Sicht der ZPU werden Daten gesendet wenn diese im Empfangs-Fifo des Kernels geschrieben werden. Empfangen werden Daten vom Kernel wenn diese in das Sende-Fifo geschrieben werden. 
 
+
 \begin{figure}[H]
 	\begin{center}
 		\includegraphics[width=0.9\textwidth]{images/zpu_architecture}
@@ -191,6 +192,8 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 		\label{zpu_architecture}	
 	\end{center}
 \end{figure}
+
+
 
 \subsection{Überblick über die Treiber-Toolchain}
 Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden.
@@ -206,7 +209,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 \pagebreak
 \section{Linux-Treibermodul: modzpu}
 
-Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
+Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Hostsystem und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
 
 \begin{figure}[H]
 \begin{center}
@@ -277,7 +280,7 @@ irqreturn_t myirq_handler(int irq, void *dev_id);
 
 \subsubsection{Konstanten}
 %TODO detaillierter
-Der Treiber deklariert neben den Funktionen auch hilfreiche Konstanten. 
+Der Treiber deklariert neben den Funktionen auch benötigte und hilfreiche Konstanten. Zum Beispiel werden die 
 \begin{lstlisting}[language=C, firstnumber=13,label=modzpu_constants, caption=Verwendete Konstanten im Treibermodul]
 #define MINOR_COUNT 1
 #define MINOR_FIRST 0
@@ -368,6 +371,101 @@ Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} geh
 Zur Fehlersicherung wird der Rückgabewert der Funktion \texttt{pci\_register\_driver(d)} überprüft und ggf. wird der Wert, sollte er nicht 0 sein, zurückgeliefert. 
 
 Ausgaben erscheinen nur, wenn das DEBUG-Flag (siehe \textit{modzpu.h}) gesetzt ist. 
+
+\subsection{Interrupt-Behandlung}
+
+\subsubsection{Ermittlung der Interruptnummer}
+Wie im Listing \ref{modzpu_initfunc} zu sehen, wird zum probing des PCI-Geräts die Funktion \texttt{mypci\_probe} zugewiesen. Probing dient der Ermittlung der Interruptnummer durch Testen der Hardware (Probing, Vgl. siehe \cite{script_hwstp}, Sete 235 ff.). % TODO: Code?!
+
+\begin{lstlisting}[language=C, firstnumber=98, label=modzpu_mypci_probe, caption=Probing Funktion]
+static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
+{
+	int r;
+
+	if ((r = pci_enable_device(dev)) != 0)
+	{
+		goto pci_enable_device_failed;
+	}
+
+	// Read physical address of the device's memory and it's size.
+	paddr = pci_resource_start (dev, 0);
+	plen  = pci_resource_len   (dev, 0);
+
+	OUT_DBG("PCI-Device 0x%x enabled.\n", DEVICE_ID);
+	
+	// Map the entire memory resource into the kernel's address space.
+	if ((r = pci_request_regions(dev, "zpu")) != 0)
+	{
+		goto pci_request_regions_failed;
+	}
+
+	pcidev_config = ioremap(paddr, plen);
+	OUT_DBG("Mapped memory resource to %p.\n", pcidev_config);
+
+	// Allocate character device number.
+	if ((r = alloc_chrdev_region(&dev_number, MINOR_FIRST, 1, "zpu")) != 0)
+	{
+		goto alloc_chrdev_region_failed;
+	}
+
+	cdev_init(&c_dev, &mychr_fops);
+	c_dev.owner = THIS_MODULE;
+
+	// Add character device.
+	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0)
+	{
+		goto cdev_add_failed;
+	}
+	
+	// Initialize fifo buffers.
+	fifo_init(&(zpu_io_stdin) , ZPU_IO_BUFFER_SIZE);
+	fifo_init(&(zpu_io_stdout), ZPU_IO_BUFFER_SIZE);
+	
+	OUT_DBG("ZPU device ready to use.\n");
+	
+	if ((r = request_irq(dev->irq, myirq_handler, IRQF_SHARED, "zpu_ir", pcidev_config)) != 0)
+	{
+		goto request_irq_failed;
+	}
+	
+	// Disable stdin interrupt, enable stdout interrupt.
+	ZPU_IO_WRITE(ADDR_CONTROL, CTRL_STDOUT_READY);
+
+	return 0;
+
+	request_irq_failed:
+		OUT_WARN("Could not register interrupt handler for interrupt %i.\n", dev->irq);
+		fifo_delete(&(zpu_io_stdin));
+		fifo_delete(&(zpu_io_stdout));
+		cdev_del(&c_dev);
+		
+	cdev_add_failed:
+		OUT_WARN("Could not register character device.\n");
+		unregister_chrdev_region(dev_number, MINOR_COUNT);
+		
+	alloc_chrdev_region_failed:
+		iounmap(pcidev_config);
+		pci_release_regions(dev);
+		OUT_WARN("Could not allocate character device number.\n");
+		
+	pci_request_regions_failed:
+		pci_disable_device(dev);
+		
+	pci_enable_device_failed:
+		OUT_WARN("Could not enable character device.\n");
+		
+	return r;
+}
+
+\end{lstlisting}
+
+
+Die Funktion versucht zunächst die PCI-Funktion zu aktivieren und liest anschließend die physikalische Adresse des Speichers und dessen Größe vom Speicher des Geräts. Dies geschieht mittels \texttt{pci\_enable\_device(dev)}. 
+
+% Methode weiter beschreiben.
+
+Nach Initialisierung der FIFOs und dem Registrieren des Interrupt-Handlers 
+
 \subsection{Modul-Cleanup}
 % TODO: ausbauen, pci_unregister_driver beschreiben?!
 Die Struktur \texttt{\&mypci\_driver} wird der Kernelfunktion \textit{pci\_unregister\_driver} übergeben um das Modul aus dem Kernel zu entladen. 
@@ -379,17 +477,6 @@ void __exit cleanup(void)
 	OUT_DBG("Unregistered PCI driver.\n");
 }
 \end{lstlisting}
-
-\subsection{Speicher Mapping}
-
-\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_mmap, caption=modzpu Cleanup-Funktion][h!]
-
-\end{lstlisting}
-
-
-
-\subsection{IOCTRL}
-
 
 \subsection{Lese- und Schreibzugriffe}
 
@@ -406,20 +493,37 @@ Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu
 
 \subsubsection{FIFO}
 
-Daten in einem FIFO werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen der \texttt{fifo.c} kurz vorgestellt:
+Daten eines FIFOs werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen der \texttt{fifo.c} kurz vorgestellt:
 
 \begin{description}
     \item[void fifo\_init       (fifo\_t *f, size\_t s);]
-    
+    In der Initiierungsfunktion werden die Lese- und Schriebzeiger, sowie Queues initialisiert. Ausserdem wird Speicher für Daten alloziiert. 
     
     \item[void fifo\_delete     (fifo\_t *f);]
+    Entfernt reservierten Speicher. 
     
     \item[int  fifo\_transfer   (fifo\_t *f1, fifo\_t *f2, int n);]
+    Überträgt n bytes von dem übergebenen FIFO f1 zu FIFO f2.
     
     \item[u8   fifo\_read\_byte  (fifo\_t *f);]
+    Wenn der übergebene FIFO nicht leer ist, wird ein Byte aus dem FIFO gelesen und der Füllstand verringert. 
     
     \item[void fifo\_write\_byte (fifo\_t *f, u8 b);]
+    Wenn der übergebene FIFO nicht voll ist, wird ein Byte in das FIFO geschrieben und der Füllstand erhöht.
 \end{description}
+
+
+%TODO: verfassen
+\subsection{Speicher Mapping}
+
+\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_mmap, caption=modzpu Cleanup-Funktion][h!]
+
+\end{lstlisting}
+
+
+% TODO: verfassen
+\subsection{IOCTRL}
+
 
 \begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
 static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
