@@ -204,7 +204,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 \end{figure}
 
 \pagebreak
-\section{Linux-Treiber-Modul: modzpu}
+\section{Linux-Treibermodul: modzpu}
 % TODO: verfassen
 Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
 
@@ -565,7 +565,7 @@ for (j = 0; j < x->ihr_length; j += w)
 \label{chapter_libzpu}
 
 % TODO: erweitern
-Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann. 
+Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen der zpulib. Anwendungsbeispiele finden sich im Abschnitt \ref{chapter_anwenderprogramme}. 
 
 Die Quelltexte für die Bibliothek finden sich auf dem beigelegten Datenträger oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
 
@@ -601,7 +601,7 @@ extern char*       zpu_last_error; //!< Description of last error.
 
 \end{lstlisting}
 
-\texttt{zpu\_error\_t} wird beispielsweise von 
+\texttt{zpu\_error\_t} wird beispielsweise als Rückgabetyp von der Funktion \texttt{zpu\_load\_from\_file} verwendet. 
 
 \subsection{Schnittstellenbeschreibung}
 Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
@@ -652,15 +652,11 @@ Folgende Fehlerkonstanten werden in der \texttt{zpu.h} deklariert:
     
 \end{description}
 
-Azumerken ist, dass allle Fehlercodes in den Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
-
-\subsection{Dateien laden} 
-
-\subsection{ZPU Starten und Stoppen}
+Azumerken ist, dass alle Fehlercodes in der Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
 
 \pagebreak
 \section{Anwenderprogramme}
-
+\label{chapter_anwenderprogramme}
 Zur Steuerung des ZPU-Boards wurden schließlich die Werkzeuge \emph{zpuload}   und \emph{zpuio} entwickelt. Das Paket liegt dieser Arbeit auf Datenträger bei, und befindet sich im Verzeichnis \texttt{apps/zputools}.
 
 \subsection{Installation}
