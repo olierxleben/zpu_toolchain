@@ -2,8 +2,12 @@
 
 if [ $1 = "modzpu" ] ; then
 	rm -f /dev/zpu
+	echo "Removed device file /dev/zpu"
 fi
 
-rmmod $1
+if ! rmmod $1 ; then
+	echo "Could not unload module ${1}." >&2
+	exit 1
+fi
 
-echo "Modul $1 entladen."
+echo "Unloaded module $1."
