@@ -8,6 +8,8 @@
 #endif
 #define OUT_WARN(msg, ...) printk(KERN_WARNING msg, ##__VA_ARGS__)
 
+// Constants
+
 #define MINOR_COUNT 1
 #define MINOR_FIRST 0
 
@@ -41,22 +43,28 @@
 #define ZPU_IO_READ(offs)        ioread32(pcidev_config + offs)
 #define ZPU_IO_WRITE(offs, what) iowrite32(what, pcidev_config + offs)
 
-
-// Inititialisierungs- und Aufräumfunktionen.
+// driver specific init and exit functions
 static int  __init init    (void);
 static void __exit cleanup (void);
 
-// PCI-bezogene Funktionen.
+// PCI functions
 static int  mypci_probe  (struct pci_dev *dev, const struct pci_device_id *id);
 static void mypci_remove (struct pci_dev *dev);
 
-// Character device-bezogene Funktionen.
+// Character device  functions
 static int     mychr_open  (struct inode* inodep, struct file* filep);
 static int     mychr_close (struct inode* inodep, struct file* filep);
 static int     mychr_mmap  (struct file *filep, struct vm_area_struct *vma);
 static int     mychr_ioctl (struct inode *inodep, struct file* filep, unsigned int cmd, unsigned long param);
 static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset);
 static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count, loff_t *offset);
+
+// Memory management functions
+void myvma_open  (struct vm_area_struct *vma);
+void myvma_close (struct vm_area_struct *vma);
+
+// Interrupt function
+irqreturn_t myirq_handler(int irq, void *dev_id);
 
 struct file_operations mychr_fops = {
 	.owner   = THIS_MODULE,
@@ -68,14 +76,7 @@ struct file_operations mychr_fops = {
 	.ioctl   = mychr_ioctl
 };
 
-// Speicherverwaltungs-bezogene Funktionen.
-void myvma_open  (struct vm_area_struct *vma);
-void myvma_close (struct vm_area_struct *vma);
-
 static struct vm_operations_struct myvma_ops = {
 	.open = myvma_open,
 	.close = myvma_close
 };
-
-// Interrupt-Kram
-irqreturn_t myirq_handler(int irq, void *dev_id);
