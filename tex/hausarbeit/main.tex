@@ -601,6 +601,8 @@ extern char*       zpu_last_error; //!< Description of last error.
 
 \end{lstlisting}
 
+\texttt{zpu\_error\_t} wird beispielsweise von 
+
 \subsection{Schnittstellenbeschreibung}
 Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
 %Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. 
@@ -623,35 +625,38 @@ Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein 
 \end{description}
 
 \subsection{Fehlercodes}
-
+Neben Typen, Variablen und Funktionen definiert die zpulib auch Fehlercodes, welche beim Debugging von Anwenderprogrammen genutzt werden können.  
 Folgende Fehlerkonstanten werden in der \texttt{zpu.h} deklariert:
 % TODO: Beschreibungen hinzufügen
 \begin{description}
     \item[\#define ZPU\_ERR\_OK              0x00]
+    OK, bzw. 0, wird zurückgegeben wenn kein Fehler aufgetreten ist. 
     
     \item[\#define ZPU\_ERR\_PARSEERROR      0x01]
+    Dieser Fehlercode wird von der zpulib zurückgegeben, wenn ein ZPU-Programm von der libchintelhex nicht analysiert werden konnte. 
     
     \item[\#define ZPU\_ERR\_DEVFILEOPEN     0x02]
+    Der Fehlercode tritt auf wenn ein ZPU-Programm nicht geöffnet werden konnte. Zum Beispiel wenn die Datei nicht gefunden wurde. 
     
     \item[\#define ZPU\_ERR\_MMAP            0x03]
+    Der MMAP-Fehlercode wird zurückgeliefert, wenn das Mapping der ZPU fehlgeschlagen ist. 
     
     \item[\#define ZPU\_ERR\_MEMCOPY         0x04]
+    Bei dieser Fehlerkonstanten handelt es sich um den Fehler der beim Kopieren in den RAM der ZPU geschehen kann. 
     
     \item[\#define ZPU\_ERR\_COULDNOTSTOP    0x05]
+    Der Fehler wird zurückgegeben wenn die ZPU nicht in den \textit{reset}-Modus versetzt werden konnte.
     
     \item[\#define ZPU\_ERR\_COULDNOTSTART   0x06]
+    Wird zurückgegeben, wenn die ZPU nicht aus dem \textit{reset}-Modus zurück in den normalen Betriebszustand versetzt werden konnte. 
     
 \end{description}
 
+Azumerken ist, dass allle Fehlercodes in den Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
 
+\subsection{Dateien laden} 
 
-%\subsubsection{Dateien Laden}
-
-%\subsubsection{ZPU Starten und Stoppen}
-
-%\subsubsection{}
-
-%\subsection{Python-Bindings}
+\subsection{ZPU Starten und Stoppen}
 
 \pagebreak
 \section{Anwenderprogramme}
