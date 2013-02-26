@@ -205,7 +205,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 
 \pagebreak
 \section{Linux-Treibermodul: modzpu}
-% TODO: verfassen
+
 Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
 
 \begin{figure}[H]
@@ -248,9 +248,9 @@ Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. An
 
 \subsection{Funktionsüberblick}
 
-Das Treibermodul stellt alle wichtigen Funktionen für die Hardware zur Verfügung. Dies sind neben den Basisfunktionen eines Treibers, wie z.B. \texttt{init} oder \texttt{mypci\_probe}, auch Funktionen zur Speicherverwaltung. Das Listing \ref{modzpu_functions} zeigt die Deklaration aus der \texttt{modzpu.h}
+Das Treibermodul stellt alle wichtigen Funktionen für die Hardware zur Verfügung. Dies sind neben den Basisfunktionen eines Treibers, wie z.B. \texttt{init} oder \texttt{mypci\_probe}, auch Funktionen zur Speicherverwaltung. Das Listing \ref{modzpu_functions} zeigt die Deklaration der Funktionen aus der \texttt{modzpu.h}.
 
-\begin{lstlisting}[language=C,firstnumber=47, label=modzpu_functions,caption=modzpu functions]
+\begin{lstlisting}[language=C,firstnumber=47, label=modzpu_functions,caption=Funktionsüberblick des Treibermoduls]
 // driver specific init and exit functions
 static int  __init init    (void);
 static void __exit cleanup (void);
@@ -272,12 +272,73 @@ void myvma_open  (struct vm_area_struct *vma);
 void myvma_close (struct vm_area_struct *vma);
 
 // Interrupt function
-irqreturn_t myirq_handler(int irq, void *dev_id);\end{lstlisting}
+irqreturn_t myirq_handler(int irq, void *dev_id);
+\end{lstlisting}
+
+\subsubsection{Konstanten}
+%TODO detaillierter
+Der Treiber deklariert neben den Funktionen auch hilfreiche Konstanten. 
+\begin{lstlisting}[language=C, firstnumber=13,label=modzpu_constants, caption=Verwendete Konstanten im Treibermodul]
+#define MINOR_COUNT 1
+#define MINOR_FIRST 0
+
+#define VENDOR_ID 0x10EE
+#define DEVICE_ID 0x0100
+
+#define ADDR_RAM     0x0000000
+#define ADDR_SYSCTL  0x0002000
+#define ADDR_DATA    0x0002010
+#define ADDR_CONTROL 0x0002014
+#define ADDR_STATUS  0x0002018
+
+#define SYSCTL_STOP  0x01
+#define SYSCTL_START 0x00
+
+#define CTRL_RXIE    (1 << 1)
+#define CTRL_TXIE    (1     )
+#define CTRL_STDIN_READY  CTRL_TXIE
+#define CTRL_STDOUT_READY CTRL_RXIE
+
+#define STAT_RXINT   (1 << 3)
+#define STAT_TXINT   (1 << 2)
+#define STAT_RXV     (1 << 1)
+#define STAT_TXE     (1     )
+#define STAT_STDIN_READY  STAT_TXINT
+#define STAT_STDOUT_READY STAT_RXINT
+
+#define ZPU_IO_BUFFER_SIZE 4096
+#define ZPU_RAM_SIZE 8192
+
+#define ZPU_IO_READ(offs)        ioread32(pcidev_config + offs)
+#define ZPU_IO_WRITE(offs, what) iowrite32(what, pcidev_config + offs)
+\end{lstlisting}
+
+
+\subsubsection{Strukturen}
+Weiterhin werden in der \texttt{modzpu.h} Strukturen für Dateioperationen und zur Speicherverwaltung deklariert. Das Listing \ref{modzpu_structures} zeigt dessen Deklaration. Der Struktur für Dateioperationen werden die in Listing \ref{modzpu_functions} deklarierten Gerätefunktionen übergeben. Die Sturktur wird benötigt um Methoden des Treibers beim Registrieren des Geräts mit dem System bekannt zu machen. 
+
+\begin{lstlisting}[language=C, firstnumber=69, label=modzpu_structures,caption=modzpu Strukturen]
+struct file_operations mychr_fops = {
+	.owner   = THIS_MODULE,
+	.open    = mychr_open,
+	.release = mychr_close,
+	.read    = mychr_read,
+	.write   = mychr_write,
+	.mmap    = mychr_mmap,
+	.ioctl   = mychr_ioctl
+};
+
+static struct vm_operations_struct myvma_ops = {
+	.open = myvma_open,
+	.close = myvma_close
+};
+
+\end{lstlisting}
 
 
 \subsection{Initialisieren des Moduls}
 
-Die Initialisierungsfunktion ist in der \textit{modzpu.h} deklariert und in der \textit{modzpu.c} implementiert. Das Listing \ref{modzpu_initfunc} zeigt die Implementierung der \textit{init}-Funktion.
+Wie im Listing \ref{modzpu_functions} zu sehen ist, wird die Initialisierungsfunktion in der \textit{modzpu.h} deklariert und in der \textit{modzpu.c} implementiert. Das Listing \ref{modzpu_initfunc} zeigt die Implementierung der \textit{init}-Funktion.
 
 \begin{lstlisting}[language=C, firstnumber=67, label=modzpu_initfunc, caption=modzpu Init-Funktion][h!]
 static int __init init(void)
@@ -342,6 +403,23 @@ void __exit cleanup(void)
 \end{figure}
 
 Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibernmodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware holen.
+
+\subsubsection{FIFO}
+
+Daten in einem FIFO werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen der \texttt{fifo.c} kurz vorgestellt:
+
+\begin{description}
+    \item[void fifo\_init       (fifo\_t *f, size\_t s);]
+    
+    
+    \item[void fifo\_delete     (fifo\_t *f);]
+    
+    \item[int  fifo\_transfer   (fifo\_t *f1, fifo\_t *f2, int n);]
+    
+    \item[u8   fifo\_read\_byte  (fifo\_t *f);]
+    
+    \item[void fifo\_write\_byte (fifo\_t *f, u8 b);]
+\end{description}
 
 \begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
 static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
@@ -592,8 +670,6 @@ for (j = 0; j < x->ihr_length; j += w)
 \pagebreak
 \section{Programmierung der ZPU: Die libzpu}
 \label{chapter_libzpu}
-
-% TODO: erweitern
 Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen der zpulib. Anwendungsbeispiele finden sich im Abschnitt \ref{chapter_anwenderprogramme}. 
 
 Die Quelltexte für die Bibliothek finden sich auf dem beigelegten Datenträger oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
@@ -656,7 +732,6 @@ Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein 
 \subsection{Fehlercodes}
 Neben Typen, Variablen und Funktionen definiert die zpulib auch Fehlercodes, welche beim Debugging von Anwenderprogrammen genutzt werden können.  
 Folgende Fehlerkonstanten werden in der \texttt{zpu.h} deklariert:
-% TODO: Beschreibungen hinzufügen
 \begin{description}
     \item[\#define ZPU\_ERR\_OK              0x00]
     OK, bzw. 0, wird zurückgegeben wenn kein Fehler aufgetreten ist. 
