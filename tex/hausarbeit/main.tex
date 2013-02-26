@@ -567,16 +567,38 @@ for (j = 0; j < x->ihr_length; j += w)
 % TODO: erweitern
 Die \textit{libzpu} stellt die für Anwenderprogramme benötigten Funktionen des Treibers zur Verfügung. Die Schnittstelle wurde zur Abstrahierung der Logik für Anwenderprogramme erstellt. Dieser Abschnitt beschreibt die Bibliotheksfunktionen und zeigt exemplarisch wie die Bibliothek in Anwenderprogrammen genutzt werden kann. 
 
-Die Quelltexte für die Bibliothek finden sich auf der beigelegten CD oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
+Die Quelltexte für die Bibliothek finden sich auf dem beigelegten Datenträger oder aber auf Github: \url{https://github.com/olivererxleben/zpulib}. 
 
 \subsection{Installation}
 Um die Bibliothek auf einem Linux-System zu installieren muss in das Wurzelverzeichnis der Quellen gewechselt werden und dort über ein Unix-übliches Makefile ausgeführt werden.
 
-\begin{lstlisting}[caption=Installation der zpulib-Bibliothek]
+\begin{lstlisting}[language=bash,caption=Installation der zpulib-Bibliothek]
 # in directory
 > ./configure
 > make
 > make install
+\end{lstlisting}
+
+\subsection{Typdefinitionen und Variablen}
+
+Die zpulib verwendet zur Fehlerbehandlung und für Funktionsrückgaben zwei eigene Typen und zwei globale Variablen. Das Listing \ref{zpulib_types_vars} zeigt dessen Deklaration in der zpu.h.
+
+\begin{lstlisting}[language=C,firstnumber=28,caption=zpulib Typen und Variblen,label=zpulib_types_vars]
+// TYPE DEFINITIONS
+
+typedef unsigned int uint_t;
+typedef uint_t       zpu_error_t;
+
+// GLOBAL VARIABLES
+
+#ifdef ZPU_C
+static zpu_error_t zpu_last_errno = 0;
+static char*       zpu_last_error = NULL;
+#else
+extern zpu_error_t zpu_last_errno; //!< Error code of last error.
+extern char*       zpu_last_error; //!< Description of last error.
+#endif
+
 \end{lstlisting}
 
 \subsection{Schnittstellenbeschreibung}
@@ -599,10 +621,6 @@ Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein 
 	\item[char* zpu\_error();]
 	Eine Hilfesmethode zum Debuggen von Anwenderprogrammen. Sie liefert den zuletzt aufgetretenen Fehler zurück. 
 \end{description}
-
-% TODO: Datenstrukturen hinzufügen
-\subsection{Datenstrukturen}
-
 
 \subsection{Fehlercodes}
 
