@@ -195,7 +195,7 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 \subsection{Überblick über die Treiber-Toolchain}
 Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden.
 
-\begin{figure}[!htb]
+\begin{figure}[H]
 	\begin{center}
 		\include{snippets/archOverview}
 		\caption{Überblick ZPU-Toolchain}
@@ -246,7 +246,34 @@ Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. An
 > make install
 \end{lstlisting}
 
-% TODO load unload skript beschreiben?!
+\subsection{Funktionsüberblick}
+
+Das Treibermodul stellt alle wichtigen Funktionen für die Hardware zur Verfügung. Dies sind neben den Basisfunktionen eines Treibers, wie z.B. \texttt{init} oder \texttt{mypci\_probe}, auch Funktionen zur Speicherverwaltung. Das Listing \ref{modzpu_functions} zeigt die Deklaration aus der \texttt{modzpu.h}
+
+\begin{lstlisting}[language=C,firstnumber=47, label=modzpu_functions,caption=modzpu functions]
+// driver specific init and exit functions
+static int  __init init    (void);
+static void __exit cleanup (void);
+
+// PCI functions
+static int  mypci_probe  (struct pci_dev *dev, const struct pci_device_id *id);
+static void mypci_remove (struct pci_dev *dev);
+
+// Character device  functions
+static int     mychr_open  (struct inode* inodep, struct file* filep);
+static int     mychr_close (struct inode* inodep, struct file* filep);
+static int     mychr_mmap  (struct file *filep, struct vm_area_struct *vma);
+static int     mychr_ioctl (struct inode *inodep, struct file* filep, unsigned int cmd, unsigned long param);
+static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset);
+static ssize_t mychr_read  (struct file *filep, char __user *data, size_t count, loff_t *offset);
+
+// Memory management functions
+void myvma_open  (struct vm_area_struct *vma);
+void myvma_close (struct vm_area_struct *vma);
+
+// Interrupt function
+irqreturn_t myirq_handler(int irq, void *dev_id);\end{lstlisting}
+
 
 \subsection{Initialisieren des Moduls}
 
@@ -294,9 +321,11 @@ void __exit cleanup(void)
 
 \subsection{Speicher Mapping}
 
-\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
+\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_mmap, caption=modzpu Cleanup-Funktion][h!]
 
 \end{lstlisting}
+
+
 
 \subsection{IOCTRL}
 
