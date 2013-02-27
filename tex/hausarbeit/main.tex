@@ -175,7 +175,7 @@ Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikropro
 
 Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
 
-Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos: Real-time OS for embedded Applications (weitere Informationen unter \cite{wp_eCos}}-Embbedded Operating System wird vom ZPU unterstützt. 
+Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos: Real-time OS for embedded Applications (weitere Informationen, siehe \cite{wp_eCos}}-Embbedded Operating System wird vom ZPU unterstützt. 
 
 % TODO: PCI Board Beschreibung überarbeiten
 Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
@@ -193,6 +193,8 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 	\end{center}
 \end{figure}
 
+Auf der Hardware befinden sich verschiedene Register, zum Beispiel um die ZPU zu kontrollieren. Die Abbildung \ref{zpu_registers} visualisiert die verschiedenen Register.
+
 \begin{figure}[H]
 	\begin{center}
 		\includegraphics[width=1\textwidth]{images/registers}
@@ -200,6 +202,22 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 		\label{zpu_registers}	
 	\end{center}
 \end{figure}
+
+\begin{description}
+
+    \item[0x00002000 SYSCTL]
+    Solange RST=1 ist, wird das eingebettete System im \textit{reset}-Modus gehalten. Wenn RST=0 wird der normale Betriebszustand ausgeführt, d. h. das Programm wird ausgeführt.
+    
+     \item[0x00002018 DATA]
+     Das Datenregister: Daten für die ZPU-Standardeingabe werden hier geschrieben. Daten der ZPU-Standardausgabe können hier ebenfalls gelesen werden. Ein lesender Zugriff blockiert das Empfangs-FIFO, sollte es leer sein und ein schreibender Zugriff blockiert das Sende-FIFO, sollte es voll sein.  
+    
+    \item[0x00002014 CONTROL]
+    Das Kontrollregister \texttt{RxIE} kann aktiviert werden um einen Interrupt beim Empfangs-FIFO auszulösen, sollte dieses nicht leer sein. Bei Aktivierung des Kontrollregisters \texttt{TxIE} wird ein Interrupt beim Sende-FIFO ausgelöst, sollte es nicht voll sein. 
+    
+    \item[0x00002018 STATUS]
+    Das Register \texttt{RxInt} zeigt an, dass ein Empfangs-Interrupt angefordert wird. Status wird durch eine AND-Verknüpfung von \texttt{RxV} und \texttt{RxIE} gesetzt. \texttt{TxInt} zeigt an das ein Sende-Interrupt angefordert wird. Es wird gesetzt durch AND-Verknüpfung von \texttt{TxE} und \texttt{TxIE}. Bei \texttt{RxV} handelt es sich um die Anzeige, dass das Empfangs-FIFO nicht leer ist. Lesen aus dem Datenregister ist möglich. \texttt{TxE} zeigt an, dass das Sende-FIFO nicht voll ist und ein Schreiben in das Datenregister möglich ist.
+ 
+\end{description}
 
 
 
