@@ -249,7 +249,9 @@ Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. An
 > make install
 \end{lstlisting}
 
-\subsection{Funktionsüberblick}
+\subsection{Schnittstellen}
+
+\subsubsection{Funktionen}
 
 Das Treibermodul stellt alle wichtigen Funktionen für die Hardware zur Verfügung. Dies sind neben den Basisfunktionen eines Treibers, wie z.B. \texttt{init} oder \texttt{mypci\_probe}, auch Funktionen zur Speicherverwaltung. Das Listing \ref{modzpu_functions} zeigt die Deklaration der Funktionen aus der \texttt{modzpu.h}.
 
@@ -311,9 +313,6 @@ Der Treiber deklariert neben den Funktionen auch benötigte und hilfreiche Konst
 
 #define ZPU_IO_BUFFER_SIZE 4096
 #define ZPU_RAM_SIZE 8192
-
-#define ZPU_IO_READ(offs)        ioread32(pcidev_config + offs)
-#define ZPU_IO_WRITE(offs, what) iowrite32(what, pcidev_config + offs)
 \end{lstlisting}
 
 
