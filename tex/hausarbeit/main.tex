@@ -520,7 +520,54 @@ static int mychr_mmap(struct file *filep, struct vm_area_struct *vma)
 }
 \end{lstlisting}
 
+\subsection{Interrupt-Bearbeitung}
 
+Die Bearbeitung von Interrupts erfolgt in der Methode \texttt{myirq\_handler}. Da über den Interrupt-Controller mehrere Interrupts ausgelöst werden können, muss hier anhand der Statusregister TXINT und RXINT zunächst überprüft werden, welcher Interrupt-Typ vorliegt.
+
+Der TXINT-Interrupt wird ausgelöst, sobald Daten in den Eingabe-FIFO der ZPU geschrieben werden können. Der RXINT-Interrupt hingegen wird ausgelöst, sobald Daten aus dem Ausgabe-FIFO der ZPU gelesen werden können.
+
+Tritt der TXINT-Interrupt auf, versucht der Interrupt-Handler so viele Bytes wie möglich aus dem Kernel-Puffer in den Eingabe-FIFO der ZPU zu kopieren. Das Kopieren erfolgt byteweise; nach jedem Byte wird anhand des TXE-Registers überprüft, ob noch ein weiteres Byte geschrieben werden kann.
+
+Beim RXINT-Interrupt wird analog dazu verfahren. Hier versucht der Interrupt-Handler, möglichst viele Bytes aus dem Ausgabe-FIFO der ZPU in den Puffer im Kernelspace zu kopieren. Hier wird anhand des RXE-Registers überprüft, ob noch weitere Daten gelesen werden können.
+
+Nachdem so viele Daten wie möglich kopiert wurden, werden am Ende des Interrupt-Handlers eventuell wartende Lese- oder Schreibprozesse (je nachdem, welcher Interrupt aufgetreten ist) wieder aufgeweckt.
+
+\begin{lstlisting}[language=C, firstnumber=12, label=modzpu_irqh, caption=Implementierung des Interrupt-Handlers,float=btp]
+irqreturn_t myirq_handler(int irq, void *dev_id)
+{
+	unsigned int status = ZPU_IO_READ(ADDR_STATUS);
+	if ((status & STAT_STDIN_READY) > 0)
+	{
+		fifo_t *f = &(zpu_io_stdin);
+		while ((status & STAT_STDIN_READY) > 0 && FIFO_NOT_EMPTY(f))
+		{
+			ZPU_IO_WRITE(ADDR_DATA, fifo_read_byte(f));
+			udelay(75);
+			status = ZPU_IO_READ(ADDR_STATUS);
+		}
+		
+		if (FIFO_EMPTY(f)) ZPU_DISABLE_STDIN_IR();
+		
+		wake_up_all(&(f->queue));
+		return IRQ_HANDLED;
+	}
+	else if ((status & STAT_STDOUT_READY) > 0)
+	{
+		fifo_t *f = &(zpu_io_stdout);
+		while ((status & STAT_STDOUT_READY) > 0 && FIFO_NOT_FULL(f))
+		{
+			fifo_write_byte(f, ZPU_IO_READ(ADDR_DATA));
+			udelay(75);
+			status = ZPU_IO_READ(ADDR_STATUS);
+		}
+		
+		if (FIFO_FULL(f)) ZPU_DISABLE_STDOUT_IR();
+		
+		wake_up_all(&(f->queue));
+		return IRQ_HANDLED;
+	}
+	return IRQ_NONE;
+}
 \end{lstlisting}
 
 \pagebreak
