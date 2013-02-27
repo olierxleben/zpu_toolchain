@@ -160,19 +160,16 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 % TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme.
 
-Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt. \footnote{(Vgl. \cite{ltp_book}, Kapitel 1)}
+Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt. \footnote{Vgl. \cite{ltp_book}, Kapitel 1.}
 
 Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
 Diese Arbeit behandelt die Entwicklung eines Linux-Treibers für ein PCI-Board mit eingebettetem ZPU-Prozessor. An den im Rahmen dieser Arbeit zu entwickelnden Treiber werden die folgenden Anforderungen gestellt:
 
 \begin{itemize}
-
-\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
-
-\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
-
-\item{Entwicklung geeigneter Anwenderprogramme zum Test des Treibers.}
+	\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
+	\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
+	\item{Entwicklung geeigneter Anwenderprogramme zum Test des Treibers.}
 \end{itemize}
 
 \pagebreak
@@ -187,19 +184,17 @@ Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \texti
 
 Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos: Real-time OS for embedded Applications (weitere Informationen, siehe \cite{wp_eCos}}-Embbedded Operating System wird vom ZPU unterstützt. 
 
-% TODO: PCI Board Beschreibung überarbeiten
 Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
 
-% TODO: überarbeiten
 Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. Das Prozessorsystem besteht aus dem ZPU-Prozessor, RAM- und ROM-Speicher und zwei FIFOs aus 8-Bit-Zeichen. 
 Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos nach dem Ausgangspunkt (ZPU oder Linux-Kernel) zum Empfangen oder Senden genutzt werden. Aus Sicht der ZPU werden Daten gesendet wenn diese im Empfangs-Fifo des Kernels geschrieben werden. Empfangen werden Daten vom Kernel wenn diese in das Sende-Fifo geschrieben werden. 
 
-Das Prozessorsystem kann über den PCI-Bus (und den darüber gesteuerten Wishbone-Bus) unterschiedlich angesprochen werden. 
+Das Prozessorsystem kann über den PCI-Bus (und den darüber gesteuerten Wishbone-Bus) unterschiedlich angesprochen werden.
+
 \begin{itemize}
     \item{Über ein Kontrollregister kann das Prozessorsystem zurückgesetzt werden.}
-
     \item{Der ROM- und der RAM-Speicher sind als Dual-Port-Speicher ausgeführt. Ein Port ist an die ZPU angeschlossen, über den zweiten Port kann durch den PCI-Bus auf die Speicher zugegriffen werden. Der ROM-Speicher ist dabei nur aus Sicht der ZPU ein reiner Lesespeicher. Aus Sicht des PCI-Busses kann der Speicher geschrieben und gelesen werden.}
-    \item{Das Sende-Fifo des Prozessorsystems kann mittels Interrupt gelesen und das Empfangs-Fifo mittels Interrupt geschrieben werden. Ein Interrupt-Controller schaltet die beiden Interrupts auf das gemeinsame PCI-Interrupt Signal.}
+    \item{Das Sende-Fifo des Prozessorsystems kann mittels Interrupt gelesen und das Empfangs-Fifo mittels Interrupt geschrieben werden. Ein Interrupt-Controller schaltet die beiden Interrupts auf das gemeinsame PCI-Interrupt-Signal.}
 
 \end{itemize}
 
@@ -224,7 +219,7 @@ Auf der Hardware befinden sich verschiedene Register, zum Beispiel um die ZPU zu
 \begin{description}
 
     \item[0x00002000 SYSCTL]
-    Solange RST=1 ist, wird das eingebettete System im \textit{reset}-Modus gehalten. Wenn RST=0 wird der normale Betriebszustand ausgeführt, d. h. das Programm wird ausgeführt.
+    Solange RST=1 ist, wird das eingebettete System im \textit{reset}-Modus gehalten. Wenn RST=0, wird der normale Betriebszustand ausgeführt, d. h. das Programm wird ausgeführt.
     
      \item[0x00002018 DATA]
      Das Datenregister: Daten für die ZPU-Standardeingabe werden hier geschrieben. Daten der ZPU-Standardausgabe können hier ebenfalls gelesen werden. Ein lesender Zugriff blockiert das Empfangs-FIFO, sollte es leer sein und ein schreibender Zugriff blockiert das Sende-FIFO, sollte es voll sein.  
