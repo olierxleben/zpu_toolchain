@@ -170,7 +170,6 @@ Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stelle
  
 \subsection{ZPU}
 
-
 Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU: Nicht fest platziert, befindet sich in einem FPGA (Vgl. siehe \cite{soft_cpu})}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
@@ -183,7 +182,6 @@ Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zw
 % TODO: überarbeiten
 Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. 
 Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos nach dem Ausgangspunkt (ZPU oder Linux-Kernel) zum Empfangen oder Senden genutzt werden. Aus Sicht der ZPU werden Daten gesendet wenn diese im Empfangs-Fifo des Kernels geschrieben werden. Empfangen werden Daten vom Kernel wenn diese in das Sende-Fifo geschrieben werden. 
-
 
 \begin{figure}[H]
 	\begin{center}
@@ -218,8 +216,6 @@ Auf der Hardware befinden sich verschiedene Register, zum Beispiel um die ZPU zu
     Das Register \texttt{RxInt} zeigt an, dass ein Empfangs-Interrupt angefordert wird. Status wird durch eine AND-Verknüpfung von \texttt{RxV} und \texttt{RxIE} gesetzt. \texttt{TxInt} zeigt an das ein Sende-Interrupt angefordert wird. Es wird gesetzt durch AND-Verknüpfung von \texttt{TxE} und \texttt{TxIE}. Bei \texttt{RxV} handelt es sich um die Anzeige, dass das Empfangs-FIFO nicht leer ist. Lesen aus dem Datenregister ist möglich. \texttt{TxE} zeigt an, dass das Sende-FIFO nicht voll ist und ein Schreiben in das Datenregister möglich ist.
  
 \end{description}
-
-
 
 \subsection{Überblick über die Treiber-Toolchain}
 Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden.
@@ -417,52 +413,6 @@ Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgef�
 
 Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-Kommandos angeboten: \texttt{RAGGED\_ZPU\_STOP} versetzt die ZPU in den Reset-Modus und \texttt{RAGGED\_ZPU\_START} lässt die ZPU weiterlaufen. Beide Kommandos setzen das RST-Register an Adresse \texttt{0x2000} auf jeweils 1 oder 0. Sie werden später benötigt, um neue Software in den ZPU-Speicher laden zu können.
 
-
-%\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
-%static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
-%{
-%	fifo_t			*f	= &(zpu_io_stdin);
-%	unsigned int	n;
-%	
-%	if (FIFO_FULL(f))
-%	{
-%		ZPU_ENABLE_STDIN_IR();
-%	
-%		if (filep->f_flags & O_NONBLOCK)
-%		{
-%			return -EAGAIN;
-%		}
-%		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
-%		{
-%			return -EINTR;
-%		}
-%	}
-%	
-%	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
-%	
-%	if (f->write + n <= f->size)
-%	{
-%		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
-%		f->write = (f->write + n) % f->size;
-%	}
-%	else
-%	{
-%		unsigned int size1 = (f->size - f->write);
-%		unsigned int size2 = (n - size1);
-%		
-%		if (copy_from_user(f->data + f->write, data, size1) +
-%		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
-%		
-%		f->write = size2;
-%	}
-%	
-%	f->count = f->count + n;
-%	ZPU_ENABLE_STDIN_IR();
-%	
-%	return n;
-%}
-%\end{lstlisting}
-
 \subsection{Lese- und Schreibzugriffe}
 
 \begin{figure}
@@ -525,7 +475,6 @@ static void mypci_remove(struct pci_dev *dev)
 }
 \end{lstlisting}
 
-%TODO: verfassen
 \subsection{Speicher-Mapping}
 
 Um aus dem Userspace heraus neue Programme in den Speicher der ZPU laden zu können, bietet das Kernelmodul den \texttt{mmap}-Systemaufruf an. Dieser blendet den 8 KiB großen RAM des ZPU-Boards in den Adressraum eines Benutzer-Prozesses ein. Hierzu wird die Methode \texttt{io\_remap\_pfn\_range} genutzt (siehe Listing \ref{modzpu_mmap}).
@@ -736,8 +685,6 @@ int main()
 
 \subsection{Besonderheiten der Umsetzung}
 
-%\subsubsection{8- vs. 32-Bit-Zugriff}
-
 Erste Versionen der cintelhex-Bibliothek versuchten, den Zielspeicherbereits byteweise zu befüllen. Während dies bei Tests an dynamisch alloziiertem RAM kein Problem darstellte, wurde schnell deutlich, dass diese Art des Zugriffs bei dem Speicher des ZPU-Boards nicht funktioniert. Listings \ref{zpu_mem_8bit} und \ref{zpu_mem_32bit} verdeutlichen das Problem.
 
 \begin{lstlisting}[float=p,language=C,caption=Unerwartetes Verhalten des ZPU-Speichers bei 8-Bit-Zugriff,morekeywords={uint8_t,uint32_t},label=zpu_mem_8bit]
@@ -838,7 +785,6 @@ extern char*       zpu_last_error; //!< Description of last error.
 
 \subsection{Schnittstellenbeschreibung}
 Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
-%Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. 
 
 \begin{description}[style=unboxed]
 	\item[zpu\_error\_t zpu\_load\_from\_file(char* filename);] 
