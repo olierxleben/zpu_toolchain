@@ -446,27 +446,30 @@ Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-
 	\end{center}
 \end{figure}
 
-Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibernmodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware holen.
+Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibernmodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware entgegen nehmen.
 
 \subsubsection{FIFO}
 
-Daten eines FIFOs werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen der \texttt{fifo.c} kurz vorgestellt:
+Daten eines FIFOs werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen und Makros der \texttt{fifo.c} kurz vorgestellt:
 
 \begin{description}
     \item[void fifo\_init       (fifo\_t *f, size\_t s);]
-    In der Initiierungsfunktion werden die Lese- und Schriebzeiger, sowie Queues initialisiert. Ausserdem wird Speicher für Daten alloziiert. 
+    In der Initiierungsfunktion werden die Lese- und Schriebzeiger, sowie Queues initialisiert. Ausserdem wird Speicher für Daten per \texttt{vmalloc} alloziiert. 
     
     \item[void fifo\_delete     (fifo\_t *f);]
-    Entfernt reservierten Speicher. 
+    Gibt reservierten Speicher wieder frei. 
     
     \item[int  fifo\_transfer   (fifo\_t *f1, fifo\_t *f2, int n);]
-    Überträgt n bytes von dem übergebenen FIFO f1 zu FIFO f2.
+    Überträgt $n$ Bytes von dem übergebenen FIFO f1 zu FIFO f2.
     
     \item[u8   fifo\_read\_byte  (fifo\_t *f);]
     Wenn der übergebene FIFO nicht leer ist, wird ein Byte aus dem FIFO gelesen und der Füllstand verringert. 
     
     \item[void fifo\_write\_byte (fifo\_t *f, u8 b);]
     Wenn der übergebene FIFO nicht voll ist, wird ein Byte in das FIFO geschrieben und der Füllstand erhöht.
+    \item [bool FIFO\_(NOT\_)FULL(fifo\_t *f)] Wahr, wenn das FIFO (nicht) voll ist
+    \item [bool FIFO\_(NOT\_)EMPTY(fifo\_t *f)] Wahr, wenn das FIFO (nicht) leer list.
+    \item [int FIFO\_FREE(fifo\_t *f)] Liefert die Anzahl der noch verfügbaren Bytes zurück.
 \end{description}
 
 
