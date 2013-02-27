@@ -164,25 +164,44 @@ Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse üb
 
 Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
+Diese Arbeit behandelt die Entwicklung eines Linux-Treibers für ein PCI-Board mit eingebettetem ZPU-Prozessor. An den im Rahmen dieser Arbeit zu entwickelnden Treiber werden die folgenden Anforderungen gestellt:
+
+\begin{itemize}
+
+\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
+
+\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
+
+\item{Entwicklung geeigneter Anwenderprogramme zum Test des Treibers.}
+\end{itemize}
+
 \pagebreak
 
 \section{Architektur}
  
 \subsection{ZPU}
 
-
-Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
+Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU: Nicht fest platziert, befindet sich in einem FPGA (Vgl. siehe \cite{soft_cpu})}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
 
-Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos:}-Embbedded Operating System wird vom ZPU unterstützt. 
+Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos: Real-time OS for embedded Applications (weitere Informationen, siehe \cite{wp_eCos}}-Embbedded Operating System wird vom ZPU unterstützt. 
 
 % TODO: PCI Board Beschreibung überarbeiten
 Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
 
 % TODO: überarbeiten
-Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. 
+Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. Das Prozessorsystem besteht aus dem ZPU-Prozessor, RAM- und ROM-Speicher und zwei FIFOs aus 8-Bit-Zeichen. 
 Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos nach dem Ausgangspunkt (ZPU oder Linux-Kernel) zum Empfangen oder Senden genutzt werden. Aus Sicht der ZPU werden Daten gesendet wenn diese im Empfangs-Fifo des Kernels geschrieben werden. Empfangen werden Daten vom Kernel wenn diese in das Sende-Fifo geschrieben werden. 
+
+Das Prozessorsystem kann über den PCI-Bus (und den darüber gesteuerten Wishbone-Bus) unterschiedlich angesprochen werden. 
+\begin{itemize}
+    \item{Über ein Kontrollregister kann das Prozessorsystem zurückgesetzt werden.}
+
+    \item{Der ROM- und der RAM-Speicher sind als Dual-Port-Speicher ausgeführt. Ein Port ist an die ZPU angeschlossen, über den zweiten Port kann durch den PCI-Bus auf die Speicher zugegriffen werden. Der ROM-Speicher ist dabei nur aus Sicht der ZPU ein reiner Lesespeicher. Aus Sicht des PCI-Busses kann der Speicher geschrieben und gelesen werden.}
+    \item{Das Sende-Fifo des Prozessorsystems kann mittels Interrupt gelesen und das Empfangs-Fifo mittels Interrupt geschrieben werden. Ein Interrupt-Controller schaltet die beiden Interrupts auf das gemeinsame PCI-Interrupt Signal.}
+
+\end{itemize}
 
 \begin{figure}[H]
 	\begin{center}
@@ -192,10 +211,36 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 	\end{center}
 \end{figure}
 
+Auf der Hardware befinden sich verschiedene Register, zum Beispiel um die ZPU zu kontrollieren. Die Abbildung \ref{zpu_registers} visualisiert die verschiedenen Register.
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=1\textwidth]{images/registers}
+		\caption{Register der ZPU}
+		\label{zpu_registers}	
+	\end{center}
+\end{figure}
+
+\begin{description}
+
+    \item[0x00002000 SYSCTL]
+    Solange RST=1 ist, wird das eingebettete System im \textit{reset}-Modus gehalten. Wenn RST=0 wird der normale Betriebszustand ausgeführt, d. h. das Programm wird ausgeführt.
+    
+     \item[0x00002018 DATA]
+     Das Datenregister: Daten für die ZPU-Standardeingabe werden hier geschrieben. Daten der ZPU-Standardausgabe können hier ebenfalls gelesen werden. Ein lesender Zugriff blockiert das Empfangs-FIFO, sollte es leer sein und ein schreibender Zugriff blockiert das Sende-FIFO, sollte es voll sein.  
+    
+    \item[0x00002014 CONTROL]
+    Das Kontrollregister \texttt{RxIE} kann aktiviert werden um einen Interrupt beim Empfangs-FIFO auszulösen, sollte dieses nicht leer sein. Bei Aktivierung des Kontrollregisters \texttt{TxIE} wird ein Interrupt beim Sende-FIFO ausgelöst, sollte es nicht voll sein. 
+    
+    \item[0x00002018 STATUS]
+    Das Register \texttt{RxInt} zeigt an, dass ein Empfangs-Interrupt angefordert wird. Status wird durch eine AND-Verknüpfung von \texttt{RxV} und \texttt{RxIE} gesetzt. \texttt{TxInt} zeigt an das ein Sende-Interrupt angefordert wird. Es wird gesetzt durch AND-Verknüpfung von \texttt{TxE} und \texttt{TxIE}. Bei \texttt{RxV} handelt es sich um die Anzeige, dass das Empfangs-FIFO nicht leer ist. Lesen aus dem Datenregister ist möglich. \texttt{TxE} zeigt an, dass das Sende-FIFO nicht voll ist und ein Schreiben in das Datenregister möglich ist.
+ 
+\end{description}
+
 \subsection{Überblick über die Treiber-Toolchain}
 Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden.
 
-\begin{figure}[H]
+\begin{figure}
 	\begin{center}
 		\include{snippets/archOverview}
 		\caption{Überblick ZPU-Toolchain}
@@ -206,7 +251,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 \pagebreak
 \section{Linux-Treibermodul: modzpu}
 
-Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Host und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
+Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für das Hostsystem und den Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
 
 \begin{figure}[H]
 \begin{center}
@@ -246,7 +291,9 @@ Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. An
 > make install
 \end{lstlisting}
 
-\subsection{Funktionsüberblick}
+\subsection{Schnittstellen}
+
+\subsubsection{Funktionen}
 
 Das Treibermodul stellt alle wichtigen Funktionen für die Hardware zur Verfügung. Dies sind neben den Basisfunktionen eines Treibers, wie z.B. \texttt{init} oder \texttt{mypci\_probe}, auch Funktionen zur Speicherverwaltung. Das Listing \ref{modzpu_functions} zeigt die Deklaration der Funktionen aus der \texttt{modzpu.h}.
 
@@ -276,8 +323,8 @@ irqreturn_t myirq_handler(int irq, void *dev_id);
 \end{lstlisting}
 
 \subsubsection{Konstanten}
-%TODO detaillierter
-Der Treiber deklariert neben den Funktionen auch hilfreiche Konstanten. 
+
+Der Treiber deklariert neben den Funktionen auch benötigte und hilfreiche Konstanten. Zum Beispiel werden die 
 \begin{lstlisting}[language=C, firstnumber=13,label=modzpu_constants, caption=Verwendete Konstanten im Treibermodul]
 #define MINOR_COUNT 1
 #define MINOR_FIRST 0
@@ -308,9 +355,6 @@ Der Treiber deklariert neben den Funktionen auch hilfreiche Konstanten.
 
 #define ZPU_IO_BUFFER_SIZE 4096
 #define ZPU_RAM_SIZE 8192
-
-#define ZPU_IO_READ(offs)        ioread32(pcidev_config + offs)
-#define ZPU_IO_WRITE(offs, what) iowrite32(what, pcidev_config + offs)
 \end{lstlisting}
 
 
@@ -367,33 +411,31 @@ Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} geh
  
 Zur Fehlersicherung wird der Rückgabewert der Funktion \texttt{pci\_register\_driver(d)} überprüft und ggf. wird der Wert, sollte er nicht 0 sein, zurückgeliefert. 
 
-Ausgaben erscheinen nur, wenn das DEBUG-Flag (siehe \textit{modzpu.h}) gesetzt ist. 
-\subsection{Modul-Cleanup}
-% TODO: ausbauen, pci_unregister_driver beschreiben?!
-Die Struktur \texttt{\&mypci\_driver} wird der Kernelfunktion \textit{pci\_unregister\_driver} übergeben um das Modul aus dem Kernel zu entladen. 
+\subsection{Initialisierung des PCI-Geräts}
+\label{modzpu_init}
 
-\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
-void __exit cleanup(void)
-{
-	pci_unregister_driver(&mypci_driver);
-	OUT_DBG("Unregistered PCI driver.\n");
-}
-\end{lstlisting}
+Die eigentliche Initialisierung des PCI-Geräts erfolgt in der Methode \texttt{mypci\_probe}. Diese wurde zuvor in der Initialisierungsmethode registriert und wird vom Kernel aufgerufen, sobald ein entsprechendes Gerät erkannt wurde.
 
-\subsection{Speicher Mapping}
+Die \texttt{mypci\_probe}-Methode übernimmt die folgenden Aufgaben:
 
-\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_mmap, caption=modzpu Cleanup-Funktion][h!]
+\begin{enumerate}
+	\item Aktivieren des Geräts per \texttt{pci\_enable\_device}.
+	\item Abbilden des Gerätespeichers in den Adressraum des Kernels. Hierzu werden zunächst mit \texttt{pci\_resource\_start} und \texttt{pci\_resource\_len} physikalische Adresse und Größe des Gerätespeichers ermittelt. Anschließend wird per \texttt{pci\_request\_regions} Zugriff auf den Bereich angefordert und dieser anschließend per \texttt{ioremap} in den Adressraum des Kernels abgebildet.
+	\item Erstellen eines \textit{Character Device} mit dem Namen \textit{zpu} per \texttt{alloc\_chrdev\_region}, \texttt{cdev\_init} und \texttt{cdev\_add}.
+	\item Initialisierung zweier FIFO-Speicher, die zum Puffern der Ein- und Ausgabeströme der ZPU dienen. Die Größe der Ein- und Ausgabepuffer wird von der Konstante \texttt{ZPU\_IO\_BUFFER\_SIZE} bestimmt.
+	\item Ermittlung der zugehörigen Interrupt-Nummer (diese wird bei PCI-Geräten vom Kernel automatisch erkannt)\footnote{Vgl. \cite{script_hwstp}, Sete 235 ff.} und Registrierung eines Interrupt-Handlers.
+	\item Freigabe des \textit{stdout}-Interrupts durch Setzen der entsprechenden Register im Gerätespeicher.
+\end{enumerate}
 
-\end{lstlisting}
-
-
+Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgeführte Aktionen wieder rückgängig gemacht, damit das System auch beim Fehlerfall in einem konsistenten Zustand hinterlassen wird.
 
 \subsection{IOCTRL}
 
+Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-Kommandos angeboten: \texttt{RAGGED\_ZPU\_STOP} versetzt die ZPU in den Reset-Modus und \texttt{RAGGED\_ZPU\_START} lässt die ZPU weiterlaufen. Beide Kommandos setzen das RST-Register an Adresse \texttt{0x2000} auf jeweils 1 oder 0. Sie werden später benötigt, um neue Software in den ZPU-Speicher laden zu können.
 
 \subsection{Lese- und Schreibzugriffe}
 
-\begin{figure}[H]
+\begin{figure}
 	\begin{center}
 		%include from external
 		\include{snippets/zpuIO}
@@ -402,70 +444,127 @@ void __exit cleanup(void)
 	\end{center}
 \end{figure}
 
-Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibernmodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware holen.
+Die Lese- und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibermodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware entgegen nehmen.
 
 \subsubsection{FIFO}
 
-Daten in einem FIFO werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen der \texttt{fifo.c} kurz vorgestellt:
+Daten eines FIFOs werden über eine FIFO-Struktur gehalten, welche in der Datei \texttt{fifo.c} implementiert ist. Nachfolgend werden die Funktionen und Makros der \texttt{fifo.c} kurz vorgestellt:
 
 \begin{description}
     \item[void fifo\_init       (fifo\_t *f, size\_t s);]
-    
+    In der Initiierungsfunktion werden die Lese- und Schriebzeiger, sowie Queues initialisiert. Ausserdem wird Speicher für Daten per \texttt{vmalloc} alloziiert. 
     
     \item[void fifo\_delete     (fifo\_t *f);]
+    Gibt reservierten Speicher wieder frei. 
     
     \item[int  fifo\_transfer   (fifo\_t *f1, fifo\_t *f2, int n);]
+    Überträgt $n$ Bytes von dem übergebenen FIFO f1 zu FIFO f2.
     
     \item[u8   fifo\_read\_byte  (fifo\_t *f);]
+    Wenn der übergebene FIFO nicht leer ist, wird ein Byte aus dem FIFO gelesen und der Füllstand verringert. 
     
     \item[void fifo\_write\_byte (fifo\_t *f, u8 b);]
+    Wenn der übergebene FIFO nicht voll ist, wird ein Byte in das FIFO geschrieben und der Füllstand erhöht.
+    \item [bool FIFO\_(NOT\_)FULL(fifo\_t *f)] Wahr, wenn das FIFO (nicht) voll ist
+    \item [bool FIFO\_(NOT\_)EMPTY(fifo\_t *f)] Wahr, wenn das FIFO (nicht) leer list.
+    \item [int FIFO\_FREE(fifo\_t *f)] Liefert die Anzahl der noch verfügbaren Bytes zurück.
 \end{description}
 
-\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
-static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
+\subsection{Modul-Cleanup}
+
+Das Entfernen des PCI-Geräts wird in der Methode \texttt{mypci\_remove} vorgenommen. Hier werden die bei der Initialisierung durchgeführten Schritte (siehe Abschnitt \ref{modzpu_init}) in umgekehrter Reihenfolge wieder rückgängig gemacht.
+
+Beim Entladen des Kernel-Moduls wird schließlich noch die Methode \texttt{cleanup} aufgerufen. Diese entlädt noch den PCI-Treiber selbst aus dem Kernel.
+
+\begin{lstlisting}[language=C, firstnumber=179, label=modzpu_cleanupfunc, caption=Entfernen des PCI-Geräts, float=btp]
+static void mypci_remove(struct pci_dev *dev)
 {
-	fifo_t			*f	= &(zpu_io_stdin);
-	unsigned int	n;
-	
-	if (FIFO_FULL(f))
-	{
-		ZPU_ENABLE_STDIN_IR();
-	
-		if (filep->f_flags & O_NONBLOCK)
-		{
-			return -EAGAIN;
-		}
-		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
-		{
-			return -EINTR;
-		}
-	}
-	
-	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
-	
-	if (f->write + n <= f->size)
-	{
-		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
-		f->write = (f->write + n) % f->size;
-	}
-	else
-	{
-		unsigned int size1 = (f->size - f->write);
-		unsigned int size2 = (n - size1);
-		
-		if (copy_from_user(f->data + f->write, data, size1) +
-		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
-		
-		f->write = size2;
-	}
-	
-	f->count = f->count + n;
-	ZPU_ENABLE_STDIN_IR();
-	
-	return n;
+	// Free interrupt handler
+	free_irq(dev->irq, pcidev_config);
+
+	// Unmap PCI address mapping
+	iounmap(pcidev_config);
+	pci_release_regions(dev);
+
+	// Disable PCI device
+	pci_disable_device(dev);
+
+	// Disable and deallocate character devices.
+	cdev_del(&c_dev);
+	unregister_chrdev_region(dev_number, MINOR_COUNT);
 }
 \end{lstlisting}
 
+\subsection{Speicher-Mapping}
+
+Um aus dem Userspace heraus neue Programme in den Speicher der ZPU laden zu können, bietet das Kernelmodul den \texttt{mmap}-Systemaufruf an. Dieser blendet den 8 KiB großen RAM des ZPU-Boards in den Adressraum eines Benutzer-Prozesses ein. Hierzu wird die Methode \texttt{io\_remap\_pfn\_range} genutzt (siehe Listing \ref{modzpu_mmap}).
+
+\begin{lstlisting}[language=C, firstnumber=9, label=modzpu_mmap, caption=Implementierung der mmap-Funktion,float=btp]
+static int mychr_mmap(struct file *filep, struct vm_area_struct *vma)
+{
+	unsigned long vm_size, map_size;
+
+	vm_size  = vma->vm_end - vma->vm_start;
+	map_size = vm_size < ZPU_RAM_SIZE ? vm_size : ZPU_RAM_SIZE;
+	
+	if (io_remap_pfn_range(vma, vma->vm_start,  (paddr + ADDR_RAM) >> PAGE_SHIFT,  map_size,  vma->vm_page_prot) != 0) return -EAGAIN;
+
+	vma->vm_ops = &myvma_ops;
+	myvma_open(vma);
+
+	return 0;
+}
+\end{lstlisting}
+
+\subsection{Interrupt-Bearbeitung}
+
+Die Bearbeitung von Interrupts erfolgt in der Methode \texttt{myirq\_handler}. Da über den Interrupt-Controller mehrere Interrupts ausgelöst werden können, muss hier anhand der Statusregister TXINT und RXINT zunächst überprüft werden, welcher Interrupt-Typ vorliegt.
+
+Der TXINT-Interrupt wird ausgelöst, sobald Daten in den Eingabe-FIFO der ZPU geschrieben werden können. Der RXINT-Interrupt hingegen wird ausgelöst, sobald Daten aus dem Ausgabe-FIFO der ZPU gelesen werden können.
+
+Tritt der TXINT-Interrupt auf, versucht der Interrupt-Handler so viele Bytes wie möglich aus dem Kernel-Puffer in den Eingabe-FIFO der ZPU zu kopieren. Das Kopieren erfolgt byteweise; nach jedem Byte wird anhand des TXE-Registers überprüft, ob noch ein weiteres Byte geschrieben werden kann.
+
+Beim RXINT-Interrupt wird analog dazu verfahren. Hier versucht der Interrupt-Handler, möglichst viele Bytes aus dem Ausgabe-FIFO der ZPU in den Puffer im Kernelspace zu kopieren. Hier wird anhand des RXE-Registers überprüft, ob noch weitere Daten gelesen werden können.
+
+Nachdem so viele Daten wie möglich kopiert wurden, werden am Ende des Interrupt-Handlers eventuell wartende Lese- oder Schreibprozesse (je nachdem, welcher Interrupt aufgetreten ist) wieder aufgeweckt.
+
+\begin{lstlisting}[language=C, firstnumber=12, label=modzpu_irqh, caption=Implementierung des Interrupt-Handlers,float=btp]
+irqreturn_t myirq_handler(int irq, void *dev_id)
+{
+	unsigned int status = ZPU_IO_READ(ADDR_STATUS);
+	if ((status & STAT_STDIN_READY) > 0)
+	{
+		fifo_t *f = &(zpu_io_stdin);
+		while ((status & STAT_STDIN_READY) > 0 && FIFO_NOT_EMPTY(f))
+		{
+			ZPU_IO_WRITE(ADDR_DATA, fifo_read_byte(f));
+			udelay(75);
+			status = ZPU_IO_READ(ADDR_STATUS);
+		}
+		
+		if (FIFO_EMPTY(f)) ZPU_DISABLE_STDIN_IR();
+		
+		wake_up_all(&(f->queue));
+		return IRQ_HANDLED;
+	}
+	else if ((status & STAT_STDOUT_READY) > 0)
+	{
+		fifo_t *f = &(zpu_io_stdout);
+		while ((status & STAT_STDOUT_READY) > 0 && FIFO_NOT_FULL(f))
+		{
+			fifo_write_byte(f, ZPU_IO_READ(ADDR_DATA));
+			udelay(75);
+			status = ZPU_IO_READ(ADDR_STATUS);
+		}
+		
+		if (FIFO_FULL(f)) ZPU_DISABLE_STDOUT_IR();
+		
+		wake_up_all(&(f->queue));
+		return IRQ_HANDLED;
+	}
+	return IRQ_NONE;
+}
+\end{lstlisting}
 
 \pagebreak
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
@@ -478,7 +577,7 @@ Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eig
 Bei dem \emph{INTEL Hexadecimal Object File Format} (kurz \emph{INTEL HEX}) handelt es sich um ein Dateiformat zur Codierung binärer Daten in ASCII-Dateien. Ursprünglich ausgelegt für 8-Bit-Intelprozessoren mit Adressräumen von 16 Bit, wurde das Format später erweitert für 16-Bit-Prozessoren mit 20-Bit-Adressräumen und für 32-Bit-Prozessoren.
 \footnote{Vgl. \cite[S. 4]{intelhex}}
 
-Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} dargestellt. Jeder Datensatz beginnt mit einem \emph{Record Mark} (ein \texttt{:}-Zeichen, oder \texttt{0x3A} in ASCII). Es folgen die Länge des Datensatzes (1 Byte, codiert in 2 ASCII-Zeichen), der Adress-Offset (2 Byte), der Typ des Datensatzes (1 Byte), der eigentliche Datensatz (variabel, bis zu 255 Bytes) und eine Prüfsumme (1 Byte), anhand derer die Korrektheit des Datensatzes überprüft werden kann.
+Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} dargestellt. Listing \ref{ihex_example} zeigt einen Auszug aus einer Beispiel-Datei. Jeder Datensatz beginnt mit einem \emph{Record Mark} (ein \texttt{:}-Zeichen, oder \texttt{0x3A} in ASCII). Es folgen die Länge des Datensatzes (1 Byte, codiert in 2 ASCII-Zeichen), der Adress-Offset (2 Byte), der Typ des Datensatzes (1 Byte), der eigentliche Datensatz (variabel, bis zu 255 Bytes) und eine Prüfsumme (1 Byte), anhand derer die Korrektheit des Datensatzes überprüft werden kann.
 
 \begin{figure}[h!]
 \begin{center}
@@ -496,7 +595,7 @@ Neben regulären Datensätzen (Typ \texttt{0x00}) und einem EOF-Datensatz (Typ \
 
 Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendung der 32-Bit-Funktionen nicht notwendig (16 Bit adressieren maximal $2^{16} = 64$ KiB). Aus diesem Grund bietet die cintelhex-Bibliothek nur experimentelle Unterstützung für 32-Bit-Adressen.
 
-\begin{lstlisting}[caption=Beispiel einer Intel HEX-Eingabedatei]
+\begin{lstlisting}[caption=Beispiel einer Intel HEX-Eingabedatei,float=bpt,label=ihex_example]
 :1000000000000000000000000000000000000000F0
 :0400100000000000EC
 :100400000B0B0B98B02D0B0B0B8880040000000029
@@ -511,7 +610,7 @@ Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendun
 
 \subsection{Installation}
 
-Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen. Außer dem Build-Tool \texttt{make}, der C-Standardbibliothek und dem GCC werden keine Abhängigkeiten benötigt.
+Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen. Außer dem Build-Tool \texttt{make}, der C-Standardbibliothek und dem GCC werden keine Abhängigkeiten benötigt. Bei der Installation wird die Datei \texttt{libcintelhex.so} nach \texttt{<prefix>/lib}, und die Datei \texttt{cintelhex.h} nach \texttt{<prefix>/include} installiert. Das Standardpräfix ist \texttt{/usr/local}.
 
 \begin{lstlisting}[caption=Installation der cintelhex-Bibliothek]
 > ./configure # optional: --prefix=/usr/local
@@ -519,8 +618,6 @@ Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt
 > make install
 > ldconfig
 \end{lstlisting}
-
-Bei der Installation wird die Datei \texttt{libcintelhex.so} nach \texttt{<prefix>/lib}, und die Datei \texttt{cintelhex.h} nach \texttt{<prefix>/include} installiert. Das Standardpräfix ist \texttt{/usr/local}.
 
 Bei Verwendung des Standardpräfix kann die cintelhex-Bibliothek beim Linken durch den GCC-Parameter \texttt{-l cintelhex} aktiviert werden.
 
@@ -589,7 +686,7 @@ Die \texttt{cintelhex.h} definiert die folgenden Fehlerkonstanten:
 
 Listing \ref{cintelhex-example} zeigt ein einfaches Anwendungsbeispiel der cintelhex-Bibliothek. Der Einfachheit halber zeigt die Variable \texttt{d} hier nur auf einen dynamisch alloziierten Speicherbereich, könnte jedoch auch ebenso gut auf den per \texttt{mmap} abgebildeten Speicher des ZPU-Boards zeigen.
 
-\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek,label=cintelhex-example]
+\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek,label=cintelhex-example,float=bpt]
 #include <stdlib.h>
 #include <cintelhex.h>
 
@@ -607,8 +704,6 @@ int main()
 \end{lstlisting}
 
 \subsection{Besonderheiten der Umsetzung}
-
-%\subsubsection{8- vs. 32-Bit-Zugriff}
 
 Erste Versionen der cintelhex-Bibliothek versuchten, den Zielspeicherbereits byteweise zu befüllen. Während dies bei Tests an dynamisch alloziiertem RAM kein Problem darstellte, wurde schnell deutlich, dass diese Art des Zugriffs bei dem Speicher des ZPU-Boards nicht funktioniert. Listings \ref{zpu_mem_8bit} und \ref{zpu_mem_32bit} verdeutlichen das Problem.
 
@@ -710,7 +805,6 @@ extern char*       zpu_last_error; //!< Description of last error.
 
 \subsection{Schnittstellenbeschreibung}
 Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
-%Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. 
 
 \begin{description}[style=unboxed]
 	\item[zpu\_error\_t zpu\_load\_from\_file(char* filename);] 
@@ -756,7 +850,7 @@ Folgende Fehlerkonstanten werden in der \texttt{zpu.h} deklariert:
     
 \end{description}
 
-Azumerken ist, dass alle Fehlercodes in der Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
+Anzumerken ist, dass alle Fehlercodes in der Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
 
 \pagebreak
 \section{Anwenderprogramme}

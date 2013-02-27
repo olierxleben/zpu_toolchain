@@ -54,7 +54,6 @@ DECLARE_MUTEX(mutex_r);              //!< Mutex for exclusive read access.
 // METHOD DECLARATIONS
 //
 
-
 #include "zpu_irq.c"
 #include "zpu_io.c"
 #include "zpu_mem.c"
@@ -93,11 +92,9 @@ void __exit cleanup(void)
 	OUT_DBG("Unregistered PCI driver.\n");
 }
 
-
 //
 // METHOD IMPLEMENTATIONS (PCI RELATED)
 //
-
 
 static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
@@ -130,10 +127,10 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	}
 
 	cdev_init(&c_dev, &mychr_fops);
-	c_dev.owner = THIS_MODULE;
+	c_dev.owner = THIS_MODULE; // add actual module as owner in c_dev
 
-	// Add character device.
-	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0)
+	// Add character device to kernel.
+	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0) 
 	{
 		goto cdev_add_failed;
 	}

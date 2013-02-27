@@ -230,13 +230,11 @@ int main()
 		Die Methoden werden in \texttt{zpu.h} definiert.
 		
 		\begin{description}[style=nextline,font=\ttfamily\bfseries]
-			\item[int zpu\_from\_hexfile(char* filename)] Lädt ein ZPU-Programm aus einer Intel HEX-Datei in die ZPU. Liefert im Erfolgsfall \texttt{0} zurück. 
-			\item[int zpu\_from\_binfile(char* filename)]
-			Wie oben, nur aus einer Binärdatei.
-			\item[int zpu\_read(char* buf, int n, int blk)]
-			Liest \texttt{n} Zeichen aus der \textbf{Standardausgabe} der ZPU. \texttt{blk} steuert, ob der Zugriff blockieren soll.
-			\item[int zpu\_write(char* buf, int n)]
-			Schreibt \texttt{n} Zeichen aus \texttt{buf} auf die \textbf{Standardeingabe} der ZPU.
+			\item[int zpu\_from\_hexfile(char* filename)] Lädt ein ZPU-Programm aus einer Intel HEX-Datei in die ZPU. Liefert im Erfolgsfall \texttt{0} zurück. Stoppt die ZPU implizit und startet sie anschließend wieder.
+			\item[int zpu\_stop()]
+			Versetzt die ZPU in den Reset-Modus.
+			\item[int zpu\_start()]
+			Startet die ZPU wieder.
 		\end{description}
 	\end{frame}
 	
