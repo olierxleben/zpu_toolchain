@@ -369,101 +369,22 @@ Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} geh
  
 Zur Fehlersicherung wird der Rückgabewert der Funktion \texttt{pci\_register\_driver(d)} überprüft und ggf. wird der Wert, sollte er nicht 0 sein, zurückgeliefert. 
 
-Ausgaben erscheinen nur, wenn das DEBUG-Flag (siehe \textit{modzpu.h}) gesetzt ist. 
+\subsection{Initialisierung des PCI-Geräts}
 
-\subsection{Interrupt-Behandlung}
+Die eigentliche Initialisierung des PCI-Geräts erfolgt in der Methode \texttt{mypci\_probe}. Diese wurde zuvor in der Initialisierungsmethode registriert und wird vom Kernel aufgerufen, sobald ein entsprechendes Gerät erkannt wurde.
 
-\subsubsection{Ermittlung der Interruptnummer}
-Wie im Listing \ref{modzpu_initfunc} zu sehen, wird zum probing des PCI-Geräts die Funktion \texttt{mypci\_probe} zugewiesen. Probing dient der Ermittlung der Interruptnummer durch Testen der Hardware (Probing, Vgl. siehe \cite{script_hwstp}, Sete 235 ff.). % TODO: Code?!
+Die \texttt{mypci\_probe}-Methode übernimmt die folgenden Aufgaben:
 
-\begin{lstlisting}[language=C, firstnumber=98, label=modzpu_mypci_probe, caption=Probing Funktion]
-static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
-{
-	int r;
+\begin{enumerate}
+	\item Aktivieren des Geräts per \texttt{pci\_enable\_device}.
+	\item Abbilden des Gerätespeichers in den Adressraum des Kernels. Hierzu werden zunächst mit \texttt{pci\_resource\_start} und \texttt{pci\_resource\_len} physikalische Adresse und Größe des Gerätespeichers ermittelt. Anschließend wird per \texttt{pci\_request\_regions} Zugriff auf den Bereich angefordert und dieser anschließend per \texttt{ioremap} in den Adressraum des Kernels abgebildet.
+	\item Erstellen eines \textit{Character Device} mit dem Namen \textit{zpu} per \texttt{alloc\_chrdev\_region}, \texttt{cdev\_init} und \texttt{cdev\_add}.
+	\item Initialisierung zweier FIFO-Speicher, die zum Puffern der Ein- und Ausgabeströme der ZPU dienen. Die Größe der Ein- und Ausgabepuffer wird von der Konstante \texttt{ZPU\_IO\_BUFFER\_SIZE} bestimmt.
+	\item Ermittlung der zugehörigen Interrupt-Nummer (diese wird bei PCI-Geräten vom Kernel automatisch erkannt)\footnote{Vgl. \cite{script_hwstp}, Sete 235 ff.} und Registrierung eines Interrupt-Handlers.
+	\item Freigabe des \textit{stdout}-Interrupts durch Setzen der entsprechenden Register im Gerätespeicher.
+\end{enumerate}
 
-	if ((r = pci_enable_device(dev)) != 0)
-	{
-		goto pci_enable_device_failed;
-	}
-
-	// Read physical address of the device's memory and it's size.
-	paddr = pci_resource_start (dev, 0);
-	plen  = pci_resource_len   (dev, 0);
-
-	OUT_DBG("PCI-Device 0x%x enabled.\n", DEVICE_ID);
-	
-	// Map the entire memory resource into the kernel's address space.
-	if ((r = pci_request_regions(dev, "zpu")) != 0)
-	{
-		goto pci_request_regions_failed;
-	}
-
-	pcidev_config = ioremap(paddr, plen);
-	OUT_DBG("Mapped memory resource to %p.\n", pcidev_config);
-
-	// Allocate character device number.
-	if ((r = alloc_chrdev_region(&dev_number, MINOR_FIRST, 1, "zpu")) != 0)
-	{
-		goto alloc_chrdev_region_failed;
-	}
-
-	cdev_init(&c_dev, &mychr_fops);
-	c_dev.owner = THIS_MODULE;
-
-	// Add character device.
-	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0)
-	{
-		goto cdev_add_failed;
-	}
-	
-	// Initialize fifo buffers.
-	fifo_init(&(zpu_io_stdin) , ZPU_IO_BUFFER_SIZE);
-	fifo_init(&(zpu_io_stdout), ZPU_IO_BUFFER_SIZE);
-	
-	OUT_DBG("ZPU device ready to use.\n");
-	
-	if ((r = request_irq(dev->irq, myirq_handler, IRQF_SHARED, "zpu_ir", pcidev_config)) != 0)
-	{
-		goto request_irq_failed;
-	}
-	
-	// Disable stdin interrupt, enable stdout interrupt.
-	ZPU_IO_WRITE(ADDR_CONTROL, CTRL_STDOUT_READY);
-
-	return 0;
-
-	request_irq_failed:
-		OUT_WARN("Could not register interrupt handler for interrupt %i.\n", dev->irq);
-		fifo_delete(&(zpu_io_stdin));
-		fifo_delete(&(zpu_io_stdout));
-		cdev_del(&c_dev);
-		
-	cdev_add_failed:
-		OUT_WARN("Could not register character device.\n");
-		unregister_chrdev_region(dev_number, MINOR_COUNT);
-		
-	alloc_chrdev_region_failed:
-		iounmap(pcidev_config);
-		pci_release_regions(dev);
-		OUT_WARN("Could not allocate character device number.\n");
-		
-	pci_request_regions_failed:
-		pci_disable_device(dev);
-		
-	pci_enable_device_failed:
-		OUT_WARN("Could not enable character device.\n");
-		
-	return r;
-}
-
-\end{lstlisting}
-
-
-Die Funktion versucht zunächst die PCI-Funktion zu aktivieren und liest anschließend die physikalische Adresse des Speichers und dessen Größe vom Speicher des Geräts. Dies geschieht mittels \texttt{pci\_enable\_device(dev)}. 
-
-% Methode weiter beschreiben.
-
-Nach Initialisierung der FIFOs und dem Registrieren des Interrupt-Handlers 
+Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgeführte Aktionen wieder rückgängig gemacht, damit das System auch beim Fehlerfall in einem konsistenten Zustand hinterlassen wird.
 
 % TODO: verfassen
 \subsubsection{IOCTRL}
