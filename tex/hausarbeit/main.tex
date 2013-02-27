@@ -386,9 +386,9 @@ Die \texttt{mypci\_probe}-Methode übernimmt die folgenden Aufgaben:
 
 Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgeführte Aktionen wieder rückgängig gemacht, damit das System auch beim Fehlerfall in einem konsistenten Zustand hinterlassen wird.
 
-% TODO: verfassen
-\subsubsection{IOCTRL}
+\subsection{IOCTRL}
 
+Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-Kommandos angeboten: \texttt{RAGGED\_ZPU\_STOP} versetzt die ZPU in den Reset-Modus und \texttt{RAGGED\_ZPU\_START} lässt die ZPU weiterlaufen. Beide Kommandos setzen das RST-Register an Adresse \texttt{0x2000}. Sie werden später benötigt, um neue Software in den ZPU-Speicher laden zu können.
 
 %\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
 %static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
