@@ -370,6 +370,7 @@ Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} geh
 Zur Fehlersicherung wird der Rückgabewert der Funktion \texttt{pci\_register\_driver(d)} überprüft und ggf. wird der Wert, sollte er nicht 0 sein, zurückgeliefert. 
 
 \subsection{Initialisierung des PCI-Geräts}
+\label{modzpu_init}
 
 Die eigentliche Initialisierung des PCI-Geräts erfolgt in der Methode \texttt{mypci\_probe}. Diese wurde zuvor in der Initialisierungsmethode registriert und wird vom Kernel aufgerufen, sobald ein entsprechendes Gerät erkannt wurde.
 
@@ -472,17 +473,28 @@ Daten eines FIFOs werden über eine FIFO-Struktur gehalten, welche in der Datei 
     \item [int FIFO\_FREE(fifo\_t *f)] Liefert die Anzahl der noch verfügbaren Bytes zurück.
 \end{description}
 
-
-
 \subsection{Modul-Cleanup}
-% TODO: ausbauen, pci_unregister_driver beschreiben?!
-Die Struktur \texttt{\&mypci\_driver} wird der Kernelfunktion \textit{pci\_unregister\_driver} übergeben um das Modul aus dem Kernel zu entladen. 
 
-\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
-void __exit cleanup(void)
+Das Entfernen des PCI-Geräts wird in der Methode \texttt{mypci\_remove} vorgenommen. Hier werden die bei der Initialisierung durchgeführten Schritte (siehe Abschnitt \ref{modzpu_init}) in umgekehrter Reihenfolge wieder rückgängig gemacht.
+
+Beim Entladen des Kernel-Moduls wird schließlich noch die Methode \texttt{cleanup} aufgerufen. Diese entlädt noch den PCI-Treiber selbst aus dem Kernel.
+
+\begin{lstlisting}[language=C, firstnumber=179, label=modzpu_cleanupfunc, caption=Entfernen des PCI-Geräts]
+static void mypci_remove(struct pci_dev *dev)
 {
-	pci_unregister_driver(&mypci_driver);
-	OUT_DBG("Unregistered PCI driver.\n");
+	// Free interrupt handler
+	free_irq(dev->irq, pcidev_config);
+
+	// Unmap PCI address mapping
+	iounmap(pcidev_config);
+	pci_release_regions(dev);
+
+	// Disable PCI device
+	pci_disable_device(dev);
+
+	// Disable and deallocate character devices.
+	cdev_del(&c_dev);
+	unregister_chrdev_region(dev_number, MINOR_COUNT);
 }
 \end{lstlisting}
 
