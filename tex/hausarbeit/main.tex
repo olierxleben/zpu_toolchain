@@ -413,27 +413,7 @@ Die \texttt{mypci\_probe}-Methode übernimmt die folgenden Aufgaben:
 
 Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgeführte Aktionen wieder rückgängig gemacht, damit das System auch beim Fehlerfall in einem konsistenten Zustand hinterlassen wird.
 
-<<<<<<< HEAD
 \subsection{IOCTRL}
-=======
-Die Funktion versucht zunächst die PCI-Funktion zu aktivieren und liest anschließend die physikalische Adresse des Speichers und dessen Größe vom Speicher des Geräts. Dies geschieht mittels \texttt{pci\_enable\_device(dev)}. 
-
-% Methode weiter beschreiben?! Abkürzen?
-
-Nach der Initialisierung der FIFOs und dem Registrieren des Interrupt-Handlers in der Probing-Funktion, muss noch der Interrupt-Handler registriert werden. Das Listing \ref{modzpu_prob_requestirq} zeigt das Registrieren des Interrupt-Handlers in der Probing-Funktion. 
-
-\begin{lstlisting}[language=C, firstnumber=142,label=modzpu_probe_requestirq, caption=Interrupt-Handler registrieren]
-if ((r = request_irq(dev->irq, myirq_handler, IRQF_SHARED, "zpu_ir", pcidev_config)) != 0)
-{
-	goto request_irq_failed;
-}
-\end{lstlisting}
-
-Beim Registrieren wird die Funktion \texttt{myirq\_handler} übergeben. 
-
-% TODO: verfassen
-\subsubsection{IOCTRL}
->>>>>>> footnotes + bib.bib
 
 Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-Kommandos angeboten: \texttt{RAGGED\_ZPU\_STOP} versetzt die ZPU in den Reset-Modus und \texttt{RAGGED\_ZPU\_START} lässt die ZPU weiterlaufen. Beide Kommandos setzen das RST-Register an Adresse \texttt{0x2000} auf jeweils 1 oder 0. Sie werden später benötigt, um neue Software in den ZPU-Speicher laden zu können.
 
