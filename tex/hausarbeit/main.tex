@@ -581,7 +581,7 @@ Die Logik zum Parsen der Intel HEX-formatierten Eingabedateien wurde in eine eig
 Bei dem \emph{INTEL Hexadecimal Object File Format} (kurz \emph{INTEL HEX}) handelt es sich um ein Dateiformat zur Codierung binärer Daten in ASCII-Dateien. Ursprünglich ausgelegt für 8-Bit-Intelprozessoren mit Adressräumen von 16 Bit, wurde das Format später erweitert für 16-Bit-Prozessoren mit 20-Bit-Adressräumen und für 32-Bit-Prozessoren.
 \footnote{Vgl. \cite[S. 4]{intelhex}}
 
-Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} dargestellt. Jeder Datensatz beginnt mit einem \emph{Record Mark} (ein \texttt{:}-Zeichen, oder \texttt{0x3A} in ASCII). Es folgen die Länge des Datensatzes (1 Byte, codiert in 2 ASCII-Zeichen), der Adress-Offset (2 Byte), der Typ des Datensatzes (1 Byte), der eigentliche Datensatz (variabel, bis zu 255 Bytes) und eine Prüfsumme (1 Byte), anhand derer die Korrektheit des Datensatzes überprüft werden kann.
+Der Aufbau eines Intel HEX-Datensatzes ist in Abbildung \ref{record_structure} dargestellt. Listing \ref{ihex_example} zeigt einen Auszug aus einer Beispiel-Datei. Jeder Datensatz beginnt mit einem \emph{Record Mark} (ein \texttt{:}-Zeichen, oder \texttt{0x3A} in ASCII). Es folgen die Länge des Datensatzes (1 Byte, codiert in 2 ASCII-Zeichen), der Adress-Offset (2 Byte), der Typ des Datensatzes (1 Byte), der eigentliche Datensatz (variabel, bis zu 255 Bytes) und eine Prüfsumme (1 Byte), anhand derer die Korrektheit des Datensatzes überprüft werden kann.
 
 \begin{figure}[h!]
 \begin{center}
@@ -599,7 +599,7 @@ Neben regulären Datensätzen (Typ \texttt{0x00}) und einem EOF-Datensatz (Typ \
 
 Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendung der 32-Bit-Funktionen nicht notwendig (16 Bit adressieren maximal $2^{16} = 64$ KiB). Aus diesem Grund bietet die cintelhex-Bibliothek nur experimentelle Unterstützung für 32-Bit-Adressen.
 
-\begin{lstlisting}[caption=Beispiel einer Intel HEX-Eingabedatei]
+\begin{lstlisting}[caption=Beispiel einer Intel HEX-Eingabedatei,float=bpt,label=ihex_example]
 :1000000000000000000000000000000000000000F0
 :0400100000000000EC
 :100400000B0B0B98B02D0B0B0B8880040000000029
@@ -614,7 +614,7 @@ Da der Speicher des verwendeten ZPU-Boards nur 8 KiB umfasst, ist eine Verwendun
 
 \subsection{Installation}
 
-Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen. Außer dem Build-Tool \texttt{make}, der C-Standardbibliothek und dem GCC werden keine Abhängigkeiten benötigt.
+Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt{configure}- und \texttt{make}-Befehlen. Außer dem Build-Tool \texttt{make}, der C-Standardbibliothek und dem GCC werden keine Abhängigkeiten benötigt. Bei der Installation wird die Datei \texttt{libcintelhex.so} nach \texttt{<prefix>/lib}, und die Datei \texttt{cintelhex.h} nach \texttt{<prefix>/include} installiert. Das Standardpräfix ist \texttt{/usr/local}.
 
 \begin{lstlisting}[caption=Installation der cintelhex-Bibliothek]
 > ./configure # optional: --prefix=/usr/local
@@ -622,8 +622,6 @@ Die Installation der cintelhex-Bibliothek erfolgt mit den Unix-üblichen \texttt
 > make install
 > ldconfig
 \end{lstlisting}
-
-Bei der Installation wird die Datei \texttt{libcintelhex.so} nach \texttt{<prefix>/lib}, und die Datei \texttt{cintelhex.h} nach \texttt{<prefix>/include} installiert. Das Standardpräfix ist \texttt{/usr/local}.
 
 Bei Verwendung des Standardpräfix kann die cintelhex-Bibliothek beim Linken durch den GCC-Parameter \texttt{-l cintelhex} aktiviert werden.
 
@@ -692,7 +690,7 @@ Die \texttt{cintelhex.h} definiert die folgenden Fehlerkonstanten:
 
 Listing \ref{cintelhex-example} zeigt ein einfaches Anwendungsbeispiel der cintelhex-Bibliothek. Der Einfachheit halber zeigt die Variable \texttt{d} hier nur auf einen dynamisch alloziierten Speicherbereich, könnte jedoch auch ebenso gut auf den per \texttt{mmap} abgebildeten Speicher des ZPU-Boards zeigen.
 
-\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek,label=cintelhex-example]
+\begin{lstlisting}[language=C,caption=Anwendungsbeispiel der cintelhex-Bibliothek,label=cintelhex-example,float=bpt]
 #include <stdlib.h>
 #include <cintelhex.h>
 
