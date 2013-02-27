@@ -53,7 +53,6 @@ DECLARE_MUTEX(mutex_r);
 // METHODEN-DEKLARATIONEN
 //
 
-
 #include "zpu_irq.c"
 #include "zpu_io.c"
 #include "zpu_mem.c"
@@ -126,10 +125,10 @@ static int mypci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	}
 
 	cdev_init(&c_dev, &mychr_fops);
-	c_dev.owner = THIS_MODULE;
+	c_dev.owner = THIS_MODULE; // add actual module as owner in c_dev
 
-	// Add character device.
-	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0)
+	// Add character device to kernel.
+	if ((r = cdev_add(&c_dev, dev_number, 1)) != 0) 
 	{
 		goto cdev_add_failed;
 	}
