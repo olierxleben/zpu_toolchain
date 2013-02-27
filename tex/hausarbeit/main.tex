@@ -409,7 +409,7 @@ static int __init init(void)
 }
 \end{lstlisting}
 
-Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} gehalten. Die Struktur ist in \textit{linux/pci.h} deklariert und wird zur Registrierung der PCI-Hardware im Kernel benötigt (Vgl. siehe \cite{script_hwstp}, Seite 253).
+Benötige Treiberinformationen werden in der Struktur \textit{mypci\_driver} gehalten. Die Struktur ist in \textit{linux/pci.h} deklariert und wird zur Registrierung der PCI-Hardware im Kernel benötigt.\footnote{Vgl. \cite{script_hwstp}, Seite 253}
  
 Zur Fehlersicherung wird der Rückgabewert der Funktion \texttt{pci\_register\_driver(d)} überprüft und ggf. wird der Wert, sollte er nicht 0 sein, zurückgeliefert. 
 
