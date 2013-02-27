@@ -142,10 +142,14 @@
 \textbf{Zusammenfassung:}\\ 	
 Die vorliegende Arbeit wurde mit LaTeX verfasst und ist eine gemeinsame Arbeit von Oliver Erxleben und Martin Helmich für das Modul \textit{Hardwarenahe System- und Treiberprogrammierung} aus dem Master-Studiengang \textit{Informatik - Verteilte und Mobile Anwendungen} im Wintersemester 2012/13 an der Hochschule Osnabrück / University of Applied Sciences.
 
+
 Das Thema der Arbeit lautet \textit{Entwicklung eines Treibers und einer Toolchain zur Administration eines Embedded Systems}. Im Kern beschreibt die Arbeit die Entwicklung eines Treibers für ein eingebettetes System unter Linux. Treiberprogrammierung unter anderen Systemen, wie zum Beispiel Microsoft Windows oder Apple Mac OS werden nicht betrachtet. Genauer wird zum einen ein Linux-Treiber für eine ZPU vorgestellt. Zum anderen werden Bibliotheken und Werkzeuge zur Verwendung in Anwenderprogrammen und zur Steuerung der ZPU beschrieben.
-\\
-Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben. Anwenderprogramme zum Testen werden an geeigneten Stellen vorgestellt, bzw. auf das zugehörige Kapitel verwiesen.
-\\
+
+
+Im ersten Teil der Arbeit wird das Konzept der Hardware und das Konzept des Treibers und der Programmierbibliotheken vorgestellt. In den darauffolgenden Abschnitten werden detailliert die einzelnen Komponenten des Treibers beschrieben.
+
+
+Die Anwenderprogramme zum Testen werden in einem eigenen Abschnitt vorgestellt, jedoch an geeigneten Stellen wird auf die Testprogramme verwiesen.
 Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compiler GCC unter Linux (Kernel-Version 2.6.XX) verwendet. 
 \end{abstract}
 
@@ -156,8 +160,6 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 \setcounter{page}{1} 
 
 \section{Einleitung}
-
-% TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme.
 
 Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt.\footnote{Vgl. \cite{ltp_book}, Kapitel 1.}
@@ -294,7 +296,7 @@ Das Listing \ref{modzpu_install} zeigt die bequeme Installation des Treibers. An
 
 Das Treibermodul stellt alle wichtigen Funktionen für die Hardware zur Verfügung. Dies sind neben den Basisfunktionen eines Treibers, wie z.B. \texttt{init} oder \texttt{mypci\_probe}, auch Funktionen zur Speicherverwaltung. Das Listing \ref{modzpu_functions} zeigt die Deklaration der Funktionen aus der \texttt{modzpu.h}.
 
-\begin{lstlisting}[language=C,firstnumber=47, label=modzpu_functions,caption=Funktionsüberblick des Treibermoduls]
+\begin{lstlisting}[language=C,firstnumber=47, label=modzpu_functions,caption=Funktionsüberblick des Treibermoduls, float=btp]
 // driver specific init and exit functions
 static int  __init init    (void);
 static void __exit cleanup (void);
@@ -322,7 +324,7 @@ irqreturn_t myirq_handler(int irq, void *dev_id);
 \subsubsection{Konstanten}
 
 Der Treiber deklariert neben den Funktionen auch benötigte und hilfreiche Konstanten. Zum Beispiel werden die 
-\begin{lstlisting}[language=C, firstnumber=13,label=modzpu_constants, caption=Verwendete Konstanten im Treibermodul]
+\begin{lstlisting}[language=C, firstnumber=13,label=modzpu_constants, caption=Verwendete Konstanten im Treibermodul, float=btp]
 #define MINOR_COUNT 1
 #define MINOR_FIRST 0
 
@@ -358,7 +360,7 @@ Der Treiber deklariert neben den Funktionen auch benötigte und hilfreiche Konst
 \subsubsection{Strukturen}
 Weiterhin werden in der \texttt{modzpu.h} Strukturen für Dateioperationen und zur Speicherverwaltung deklariert. Das Listing \ref{modzpu_structures} zeigt dessen Deklaration. Der Struktur für Dateioperationen werden die in Listing \ref{modzpu_functions} deklarierten Gerätefunktionen übergeben. Die Sturktur wird benötigt um Methoden des Treibers beim Registrieren des Geräts mit dem System bekannt zu machen. 
 
-\begin{lstlisting}[language=C, firstnumber=69, label=modzpu_structures,caption=modzpu Strukturen]
+\begin{lstlisting}[language=C, firstnumber=69, label=modzpu_structures,caption=modzpu Strukturen, float=btp]
 struct file_operations mychr_fops = {
 	.owner   = THIS_MODULE,
 	.open    = mychr_open,
