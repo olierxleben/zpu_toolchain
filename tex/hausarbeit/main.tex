@@ -438,7 +438,7 @@ Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-
 
 \subsection{Lese- und Schreibzugriffe}
 
-\begin{figure}[H]
+\begin{figure}
 	\begin{center}
 		%include from external
 		\include{snippets/zpuIO}
@@ -479,7 +479,7 @@ Das Entfernen des PCI-Geräts wird in der Methode \texttt{mypci\_remove} vorgeno
 
 Beim Entladen des Kernel-Moduls wird schließlich noch die Methode \texttt{cleanup} aufgerufen. Diese entlädt noch den PCI-Treiber selbst aus dem Kernel.
 
-\begin{lstlisting}[language=C, firstnumber=179, label=modzpu_cleanupfunc, caption=Entfernen des PCI-Geräts]
+\begin{lstlisting}[language=C, firstnumber=179, label=modzpu_cleanupfunc, caption=Entfernen des PCI-Geräts, float=btp]
 static void mypci_remove(struct pci_dev *dev)
 {
 	// Free interrupt handler
