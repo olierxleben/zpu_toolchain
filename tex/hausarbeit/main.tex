@@ -164,6 +164,18 @@ Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse üb
 
 Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
+
+Die Aufgaben des Treibers lassen sich wie folgt beschreiben:
+
+\begin{itemize}
+
+\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
+
+\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
+
+\item{Geeignete Anwenderprogramme zum testen entwickeln}
+\end{itemize}
+
 \pagebreak
 
 \section{Architektur}
