@@ -209,7 +209,7 @@ Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch B
 \pagebreak
 \section{Linux-Treibermodul: modzpu}
 
-Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für Hostsystem und für Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
+Der Treiber für das Embedded System stellt die zentrale Steuerungssoftware für das Hostsystem und den Treiber dar. Dieser Abschnitt gibt einen Überblick über das Treibermodul und stellt die wichtigsten Funktionen im Modul vor. Zur Übersichtlichkeit wurden Funktionen für den PCI-Treiber in mehrere Dateien aufgesplittet. Das Treibermodul ist wie folgt aufgebaut:
 
 \begin{figure}[H]
 \begin{center}
@@ -466,17 +466,54 @@ Die Funktion versucht zunächst die PCI-Funktion zu aktivieren und liest anschli
 
 Nach Initialisierung der FIFOs und dem Registrieren des Interrupt-Handlers 
 
-\subsection{Modul-Cleanup}
-% TODO: ausbauen, pci_unregister_driver beschreiben?!
-Die Struktur \texttt{\&mypci\_driver} wird der Kernelfunktion \textit{pci\_unregister\_driver} übergeben um das Modul aus dem Kernel zu entladen. 
+% TODO: verfassen
+\subsubsection{IOCTRL}
 
-\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
-void __exit cleanup(void)
-{
-	pci_unregister_driver(&mypci_driver);
-	OUT_DBG("Unregistered PCI driver.\n");
-}
-\end{lstlisting}
+
+%\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
+%static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
+%{
+%	fifo_t			*f	= &(zpu_io_stdin);
+%	unsigned int	n;
+%	
+%	if (FIFO_FULL(f))
+%	{
+%		ZPU_ENABLE_STDIN_IR();
+%	
+%		if (filep->f_flags & O_NONBLOCK)
+%		{
+%			return -EAGAIN;
+%		}
+%		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
+%		{
+%			return -EINTR;
+%		}
+%	}
+%	
+%	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
+%	
+%	if (f->write + n <= f->size)
+%	{
+%		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
+%		f->write = (f->write + n) % f->size;
+%	}
+%	else
+%	{
+%		unsigned int size1 = (f->size - f->write);
+%		unsigned int size2 = (n - size1);
+%		
+%		if (copy_from_user(f->data + f->write, data, size1) +
+%		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
+%		
+%		f->write = size2;
+%	}
+%	
+%	f->count = f->count + n;
+%	ZPU_ENABLE_STDIN_IR();
+%	
+%	return n;
+%}
+%\end{lstlisting}
 
 \subsection{Lese- und Schreibzugriffe}
 
@@ -513,63 +550,25 @@ Daten eines FIFOs werden über eine FIFO-Struktur gehalten, welche in der Datei 
 \end{description}
 
 
+
+\subsection{Modul-Cleanup}
+% TODO: ausbauen, pci_unregister_driver beschreiben?!
+Die Struktur \texttt{\&mypci\_driver} wird der Kernelfunktion \textit{pci\_unregister\_driver} übergeben um das Modul aus dem Kernel zu entladen. 
+
+\begin{lstlisting}[language=C, firstnumber=67, label=modzpu_cleanupfunc, caption=modzpu Cleanup-Funktion][h!]
+void __exit cleanup(void)
+{
+	pci_unregister_driver(&mypci_driver);
+	OUT_DBG("Unregistered PCI driver.\n");
+}
+\end{lstlisting}
+
 %TODO: verfassen
 \subsection{Speicher Mapping}
 
 \begin{lstlisting}[language=C, firstnumber=67, label=modzpu_mmap, caption=modzpu Cleanup-Funktion][h!]
 
 \end{lstlisting}
-
-
-% TODO: verfassen
-\subsection{IOCTRL}
-
-
-\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
-static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
-{
-	fifo_t			*f	= &(zpu_io_stdin);
-	unsigned int	n;
-	
-	if (FIFO_FULL(f))
-	{
-		ZPU_ENABLE_STDIN_IR();
-	
-		if (filep->f_flags & O_NONBLOCK)
-		{
-			return -EAGAIN;
-		}
-		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
-		{
-			return -EINTR;
-		}
-	}
-	
-	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
-	
-	if (f->write + n <= f->size)
-	{
-		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
-		f->write = (f->write + n) % f->size;
-	}
-	else
-	{
-		unsigned int size1 = (f->size - f->write);
-		unsigned int size2 = (n - size1);
-		
-		if (copy_from_user(f->data + f->write, data, size1) +
-		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
-		
-		f->write = size2;
-	}
-	
-	f->count = f->count + n;
-	ZPU_ENABLE_STDIN_IR();
-	
-	return n;
-}
-\end{lstlisting}
-
 
 \pagebreak
 \section{Parsing der Intel HEX-Dateien: Die libcintelhex}
