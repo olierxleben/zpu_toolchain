@@ -171,11 +171,11 @@ Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stelle
 \subsection{ZPU}
 
 
-Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU:}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
+Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU: Nicht fest platziert, befindet sich in einem FPGA (Vgl. siehe \cite{soft_cpu})}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
 
-Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos:}-Embbedded Operating System wird vom ZPU unterstützt. 
+Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos: Real-time OS for embedded Applications (weitere Informationen unter \cite{wp_eCos}}-Embbedded Operating System wird vom ZPU unterstützt. 
 
 % TODO: PCI Board Beschreibung überarbeiten
 Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
@@ -190,6 +190,14 @@ Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo st
 		\includegraphics[width=0.9\textwidth]{images/zpu_architecture}
 		\caption{Architektur der ZPU}
 		\label{zpu_architecture}	
+	\end{center}
+\end{figure}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=1\textwidth]{images/registers}
+		\caption{Register der ZPU}
+		\label{zpu_registers}	
 	\end{center}
 \end{figure}
 
@@ -387,9 +395,30 @@ Die \texttt{mypci\_probe}-Methode übernimmt die folgenden Aufgaben:
 
 Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgeführte Aktionen wieder rückgängig gemacht, damit das System auch beim Fehlerfall in einem konsistenten Zustand hinterlassen wird.
 
+<<<<<<< HEAD
 \subsection{IOCTRL}
+=======
+Die Funktion versucht zunächst die PCI-Funktion zu aktivieren und liest anschließend die physikalische Adresse des Speichers und dessen Größe vom Speicher des Geräts. Dies geschieht mittels \texttt{pci\_enable\_device(dev)}. 
+
+% Methode weiter beschreiben?! Abkürzen?
+
+Nach der Initialisierung der FIFOs und dem Registrieren des Interrupt-Handlers in der Probing-Funktion, muss noch der Interrupt-Handler registriert werden. Das Listing \ref{modzpu_prob_requestirq} zeigt das Registrieren des Interrupt-Handlers in der Probing-Funktion. 
+
+\begin{lstlisting}[language=C, firstnumber=142,label=modzpu_probe_requestirq, caption=Interrupt-Handler registrieren]
+if ((r = request_irq(dev->irq, myirq_handler, IRQF_SHARED, "zpu_ir", pcidev_config)) != 0)
+{
+	goto request_irq_failed;
+}
+\end{lstlisting}
+
+Beim Registrieren wird die Funktion \texttt{myirq\_handler} übergeben. 
+
+% TODO: verfassen
+\subsubsection{IOCTRL}
+>>>>>>> footnotes + bib.bib
 
 Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-Kommandos angeboten: \texttt{RAGGED\_ZPU\_STOP} versetzt die ZPU in den Reset-Modus und \texttt{RAGGED\_ZPU\_START} lässt die ZPU weiterlaufen. Beide Kommandos setzen das RST-Register an Adresse \texttt{0x2000} auf jeweils 1 oder 0. Sie werden später benötigt, um neue Software in den ZPU-Speicher laden zu können.
+
 
 %\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
 %static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
