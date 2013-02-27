@@ -1,9 +1,9 @@
 
 
-void myvma_open(struct vm_area_struct *vma) { printk("VMA Open.\n"); }
+void myvma_open(struct vm_area_struct *vma) { }
 
 
-void myvma_close(struct vm_area_struct *vma) { printk("VMA Close.\n"); }
+void myvma_close(struct vm_area_struct *vma) { }
 
 
 static int mychr_mmap(struct file *filep, struct vm_area_struct *vma)

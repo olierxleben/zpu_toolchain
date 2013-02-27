@@ -160,20 +160,16 @@ Sofern nicht anders angegeben, wird zum Kompilieren des Quellcodes der GNU-Compi
 % TODO: überarbeiten / erweitern
 Täglich verwendet und verlässt sich unsere Gesellschaft auf computergestützte Anwendungen. Wir suchen, schreiben, drucken, kopieren, erstellen oder entfernen Daten. Nur allzu oft werden dabei Geräte verwendet, die Funktionen für den Anwender bereitstellen, oder aber das Funktionsspektrum des Comutersystems erweitern. Funktionen der Computerkomponenten werden durch Anwenderprogramme durchgeführt, die von einem Betriebssystem verwaltet werden. Das Betriebssystem verwaltet auch alle Komponenten des Computersystems. Diese Komponenten sind Software oder auch Hardware. Erst die Teamarbeit zwischen Hardware und Software ermöglicht für den Anwender die Ausführung komplexer Programme.
 
-Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt. \footnote{(Vgl. \cite{ltp_book}, Kapitel 1)}
+Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse über die installierten Hardwarekomponenten. Das \textit{Wissen} über angeschlossene Hardwarekomponenten ist in sog. Gerätetreibern\footnote{Gerätetreiber: Softwaremodul, welches Zugriffe und Interaktionen mit installierter Hardware steuert.} hinterlegt. Es stellt einen Teil des Betriebssystemkerns dar, der für den Zugriff auf Hardware verantwortlich ist. Für jedes Gerät wird ein eigener Treiber benötigt. \footnote{Vgl. \cite{ltp_book}, Kapitel 1.}
 
 Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
-
-Die Aufgaben des Treibers lassen sich wie folgt beschreiben:
+Diese Arbeit behandelt die Entwicklung eines Linux-Treibers für ein PCI-Board mit eingebettetem ZPU-Prozessor. An den im Rahmen dieser Arbeit zu entwickelnden Treiber werden die folgenden Anforderungen gestellt:
 
 \begin{itemize}
-
-\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
-
-\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
-
-\item{Geeignete Anwenderprogramme zum testen entwickeln}
+	\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
+	\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
+	\item{Entwicklung geeigneter Anwenderprogramme zum Test des Treibers.}
 \end{itemize}
 
 \pagebreak
@@ -182,24 +178,23 @@ Die Aufgaben des Treibers lassen sich wie folgt beschreiben:
  
 \subsection{ZPU}
 
-
 Der ZPU ist nach Angaben des Herstellers, Zylin AS, der kleinste 32-Bit-Mikroprozessor der Welt und zählt zu der Kategorie der \textit{Soft CPU}\footnote{Soft-CPU: Nicht fest platziert, befindet sich in einem FPGA (Vgl. siehe \cite{soft_cpu})}s. Die grundlegende Idee, bzw. Aufgabe einer Soft-CPU, bzw. der ZPU ist so wenig FPGA\footnote{FPGA: Field Programmable Gate Array}-Speicher wie möglich aufzunehmen und Berechnungen dem HDL\footnote{HDL: Hardware Description Language}-Programm zu überlassen.
 
 Zur Programmierung der ZPU kann die GCC-Toolchain verwendet werden. Neben \textit{GDB} werden \textit{newlib} und \textit{libstdc+} unterstützt.
 
 Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betreiben. Das \textit{eCos}\footnote{eCos: Real-time OS for embedded Applications (weitere Informationen, siehe \cite{wp_eCos}}-Embbedded Operating System wird vom ZPU unterstützt. 
 
-% TODO: PCI Board Beschreibung überarbeiten
 Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
 
-% TODO: überarbeiten
 Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. Das Prozessorsystem besteht aus dem ZPU-Prozessor, RAM- und ROM-Speicher und zwei FIFOs aus 8-Bit-Zeichen. 
 Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos nach dem Ausgangspunkt (ZPU oder Linux-Kernel) zum Empfangen oder Senden genutzt werden. Aus Sicht der ZPU werden Daten gesendet wenn diese im Empfangs-Fifo des Kernels geschrieben werden. Empfangen werden Daten vom Kernel wenn diese in das Sende-Fifo geschrieben werden. 
 
-Das Prozessorsystem kann über den PCI-Bus (und den darüber gesteuerten Wishbone-Bus) unterschiedlich angesprochen werden. 
+Das Prozessorsystem kann über den PCI-Bus (und den darüber gesteuerten Wishbone-Bus) unterschiedlich angesprochen werden.
+
 \begin{itemize}
     \item{Über ein Kontrollregister kann das Prozessorsystem zurückgesetzt werden.}
-    \item{Der ROM- und der RAM-Speicher sind als Dual-Port-Speicher ausgeführt. Ein Port ist an die ZPU angeschlossen, über den zweiten Port kann durch den PCI-Bus auf die Speicher zugegriffen werden. Der ROM-Speicher ist dabei nur aus Sicht der ZPU ein reiner Lesespeicher. Aus Sicht des PCI-Busses kann der Speicher geschrieben und gelesen werden.}    \item{Das Sende-Fifo des Prozessorsystems kann mittels Interrupt gelesen und das Empfangs-Fifo mittels Interrupt geschrieben werden. Ein Interrupt-Controller schaltet die beiden Interrupts auf das gemeinsame PCI-Interrupt Signal.}
+    \item{Der ROM- und der RAM-Speicher sind als Dual-Port-Speicher ausgeführt. Ein Port ist an die ZPU angeschlossen, über den zweiten Port kann durch den PCI-Bus auf die Speicher zugegriffen werden. Der ROM-Speicher ist dabei nur aus Sicht der ZPU ein reiner Lesespeicher. Aus Sicht des PCI-Busses kann der Speicher geschrieben und gelesen werden.}
+    \item{Das Sende-Fifo des Prozessorsystems kann mittels Interrupt gelesen und das Empfangs-Fifo mittels Interrupt geschrieben werden. Ein Interrupt-Controller schaltet die beiden Interrupts auf das gemeinsame PCI-Interrupt-Signal.}
 
 \end{itemize}
 
@@ -224,7 +219,7 @@ Auf der Hardware befinden sich verschiedene Register, zum Beispiel um die ZPU zu
 \begin{description}
 
     \item[0x00002000 SYSCTL]
-    Solange RST=1 ist, wird das eingebettete System im \textit{reset}-Modus gehalten. Wenn RST=0 wird der normale Betriebszustand ausgeführt, d. h. das Programm wird ausgeführt.
+    Solange RST=1 ist, wird das eingebettete System im \textit{reset}-Modus gehalten. Wenn RST=0, wird der normale Betriebszustand ausgeführt, d. h. das Programm wird ausgeführt.
     
      \item[0x00002018 DATA]
      Das Datenregister: Daten für die ZPU-Standardeingabe werden hier geschrieben. Daten der ZPU-Standardausgabe können hier ebenfalls gelesen werden. Ein lesender Zugriff blockiert das Empfangs-FIFO, sollte es leer sein und ein schreibender Zugriff blockiert das Sende-FIFO, sollte es voll sein.  
@@ -236,8 +231,6 @@ Auf der Hardware befinden sich verschiedene Register, zum Beispiel um die ZPU zu
     Das Register \texttt{RxInt} zeigt an, dass ein Empfangs-Interrupt angefordert wird. Status wird durch eine AND-Verknüpfung von \texttt{RxV} und \texttt{RxIE} gesetzt. \texttt{TxInt} zeigt an das ein Sende-Interrupt angefordert wird. Es wird gesetzt durch AND-Verknüpfung von \texttt{TxE} und \texttt{TxIE}. Bei \texttt{RxV} handelt es sich um die Anzeige, dass das Empfangs-FIFO nicht leer ist. Lesen aus dem Datenregister ist möglich. \texttt{TxE} zeigt an, dass das Sende-FIFO nicht voll ist und ein Schreiben in das Datenregister möglich ist.
  
 \end{description}
-
-
 
 \subsection{Überblick über die Treiber-Toolchain}
 Wie in der Einleitung bereits beschrieben, sollen neben dem Treiber-Modul auch Bibliotheken für Benutzerprogramme, sowie Benutzerprogramme selbst entwickelt werden. Die Abbildung \ref{zpu_overview} zeigt die drei Ebenen die entwickelt werden.
@@ -435,52 +428,6 @@ Sollte es beim Ablauf dieser Funktion zu Fehlern kommen, werden bisher durchgef�
 
 Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-Kommandos angeboten: \texttt{RAGGED\_ZPU\_STOP} versetzt die ZPU in den Reset-Modus und \texttt{RAGGED\_ZPU\_START} lässt die ZPU weiterlaufen. Beide Kommandos setzen das RST-Register an Adresse \texttt{0x2000} auf jeweils 1 oder 0. Sie werden später benötigt, um neue Software in den ZPU-Speicher laden zu können.
 
-
-%\begin{lstlisting}[language=C, firstnumber=14, label=modzpu_mychr_write, caption=ZPU-Schreib-Funktion][h!]
-%static ssize_t mychr_write (struct file *filep, const char __user *data, size_t count, loff_t *offset)
-%{
-%	fifo_t			*f	= &(zpu_io_stdin);
-%	unsigned int	n;
-%	
-%	if (FIFO_FULL(f))
-%	{
-%		ZPU_ENABLE_STDIN_IR();
-%	
-%		if (filep->f_flags & O_NONBLOCK)
-%		{
-%			return -EAGAIN;
-%		}
-%		else if (wait_event_interruptible(f->queue, FIFO_NOT_FULL(f)) != 0)
-%		{
-%			return -EINTR;
-%		}
-%	}
-%	
-%	n = count < FIFO_FREE(f) ? count : FIFO_FREE(f);
-%	
-%	if (f->write + n <= f->size)
-%	{
-%		if (copy_from_user(f->data + f->write, data, n) > 0) return -EAGAIN;
-%		f->write = (f->write + n) % f->size;
-%	}
-%	else
-%	{
-%		unsigned int size1 = (f->size - f->write);
-%		unsigned int size2 = (n - size1);
-%		
-%		if (copy_from_user(f->data + f->write, data, size1) +
-%		    copy_from_user(f->data, data + size1, size2) > 0) return -EAGAIN;
-%		
-%		f->write = size2;
-%	}
-%	
-%	f->count = f->count + n;
-%	ZPU_ENABLE_STDIN_IR();
-%	
-%	return n;
-%}
-%\end{lstlisting}
-
 \subsection{Lese- und Schreibzugriffe}
 
 \begin{figure}
@@ -492,7 +439,7 @@ Um die ZPU in den Reset-Modus versetzen zu können, werden zwei \textit{ioctrl}-
 	\end{center}
 \end{figure}
 
-Die Lese - und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibernmodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware entgegen nehmen.
+Die Lese- und Schreibzugriffe auf, bzw. von der ZPU, sind in Abbildung \ref{zpu_io} veranschaulicht. Das Treibermodul kann aus dem Kernel Daten über das Eingabe-FIFO schreiben und über das Ausgabe-FIFO Daten von der PCI-Hardware entgegen nehmen.
 
 \subsubsection{FIFO}
 
@@ -753,8 +700,6 @@ int main()
 
 \subsection{Besonderheiten der Umsetzung}
 
-%\subsubsection{8- vs. 32-Bit-Zugriff}
-
 Erste Versionen der cintelhex-Bibliothek versuchten, den Zielspeicherbereits byteweise zu befüllen. Während dies bei Tests an dynamisch alloziiertem RAM kein Problem darstellte, wurde schnell deutlich, dass diese Art des Zugriffs bei dem Speicher des ZPU-Boards nicht funktioniert. Listings \ref{zpu_mem_8bit} und \ref{zpu_mem_32bit} verdeutlichen das Problem.
 
 \begin{lstlisting}[float=p,language=C,caption=Unerwartetes Verhalten des ZPU-Speichers bei 8-Bit-Zugriff,morekeywords={uint8_t,uint32_t},label=zpu_mem_8bit]
@@ -855,7 +800,6 @@ extern char*       zpu_last_error; //!< Description of last error.
 
 \subsection{Schnittstellenbeschreibung}
 Die Methoden der libzpu können durch das Inkludieren der \texttt{zpu.h} in ein Anwenderprogramm benutzt werden. Die \textit{zpulib} benutzt zudem Funktionen der \textit{libcintelhex} um Hex-Dateien zu laden. Nachfolgend werden die Funktionen der zpulib beschrieben.
-%Desweiteren existiert die \texttt{zpu\_commands.h}, in der die IO-Kontrolle für die ZPU implementiert ist. 
 
 \begin{description}[style=unboxed]
 	\item[zpu\_error\_t zpu\_load\_from\_file(char* filename);] 
@@ -901,7 +845,7 @@ Folgende Fehlerkonstanten werden in der \texttt{zpu.h} deklariert:
     
 \end{description}
 
-Azumerken ist, dass alle Fehlercodes in der Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
+Anzumerken ist, dass alle Fehlercodes in der Funktionsimplementierung Verwendung finden (siehe weitere Abschnitte). 
 
 \pagebreak
 \section{Anwenderprogramme}
