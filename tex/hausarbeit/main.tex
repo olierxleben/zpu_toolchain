@@ -164,6 +164,18 @@ Das Betriebssystem steuert den Zugriff auf Hardware und benötigt Kenntnisse üb
 
 Die Entwicklung eines Gerätetreibers und zugehörige Softwarekomponenten stellen einen interessanten, wenn nicht sogar erstrebenswerten, Teil der Programmierung von Computersystemen dar.
 
+
+Die Aufgaben des Treibers lassen sich wie folgt beschreiben:
+
+\begin{itemize}
+
+\item{IOCTL/MMAP: Es soll möglich sein das eingebettete Prozessorsystem durch ein Applikationsprogramm zurückzusetzen und mit neuer Software zu laden.}
+
+\item{Read-/Write-Funktionen: Im Betrieb des eingebetteten Prozessorsystems soll es möglich sein über Anwenderprogramme Eingaben von der Standardeingabe zu senden und Ausgaben von der Standardausgabe zu lesen.}
+
+\item{Geeignete Anwenderprogramme zum testen entwickeln}
+\end{itemize}
+
 \pagebreak
 
 \section{Architektur}
@@ -180,8 +192,15 @@ Weiterhin ist es möglich den ZPU mit einem eingebetteten Betriebssystem zu betr
 Neben dem ZPU sind weitere Komponenten auf dem PCI-Board enthalten. Zum einen zwei Ein- und Ausgabe-Fifos, welche zum Laden des Programms für die ZPU genutzt werden und zum anderen eine 7-Segment-Anzeige.
 
 % TODO: überarbeiten
-Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. 
+Die Hardware-Architektur der ZPU lässt sich in Abbildung \ref{zpu_architecture} veranschaulichen. Das Prozessorsystem besteht aus dem ZPU-Prozessor, RAM- und ROM-Speicher und zwei FIFOs aus 8-Bit-Zeichen. 
 Die Ein- und Ausgabe von Daten lassen sich über das Sende- und Empfangs-Fifo steuern. Zu beachten ist an dieser Stelle das die Fifos nach dem Ausgangspunkt (ZPU oder Linux-Kernel) zum Empfangen oder Senden genutzt werden. Aus Sicht der ZPU werden Daten gesendet wenn diese im Empfangs-Fifo des Kernels geschrieben werden. Empfangen werden Daten vom Kernel wenn diese in das Sende-Fifo geschrieben werden. 
+
+Das Prozessorsystem kann über den PCI-Bus (und den darüber gesteuerten Wishbone-Bus) unterschiedlich angesprochen werden. 
+\begin{itemize}
+    \item{Über ein Kontrollregister kann das Prozessorsystem zurückgesetzt werden.}
+    \item{Der ROM- und der RAM-Speicher sind als Dual-Port-Speicher ausgeführt. Ein Port ist an die ZPU angeschlossen, über den zweiten Port kann durch den PCI-Bus auf die Speicher zugegriffen werden. Der ROM-Speicher ist dabei nur aus Sicht der ZPU ein reiner Lesespeicher. Aus Sicht des PCI-Busses kann der Speicher geschrieben und gelesen werden.}    \item{Das Sende-Fifo des Prozessorsystems kann mittels Interrupt gelesen und das Empfangs-Fifo mittels Interrupt geschrieben werden. Ein Interrupt-Controller schaltet die beiden Interrupts auf das gemeinsame PCI-Interrupt Signal.}
+
+\end{itemize}
 
 \begin{figure}[H]
 	\begin{center}
@@ -303,7 +322,7 @@ irqreturn_t myirq_handler(int irq, void *dev_id);
 \end{lstlisting}
 
 \subsubsection{Konstanten}
-%TODO detaillierter
+
 Der Treiber deklariert neben den Funktionen auch benötigte und hilfreiche Konstanten. Zum Beispiel werden die 
 \begin{lstlisting}[language=C, firstnumber=13,label=modzpu_constants, caption=Verwendete Konstanten im Treibermodul]
 #define MINOR_COUNT 1
