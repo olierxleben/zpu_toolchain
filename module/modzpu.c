@@ -3,7 +3,7 @@
  *  Oliver Erxleben <oliver.erxleben@hs-osnabrueck.de>
  *  Martin Helmich  <martin.helmich@hs-osnabrueck.de>
  * 
- *  University of applied sciences Osnabrück
+ *  University of Applied Sciences Osnabrück
  */
  
 #include <linux/module.h>
@@ -34,23 +34,24 @@ DEFINE_PCI_DEVICE_TABLE(id_table) = {
 	{ 0, }
 }; 
 
-struct pci_driver mypci_driver;
-unsigned long     paddr, plen;
-void             *pcidev_config;
-unsigned int      mypci_ircount = 0;
+struct pci_driver mypci_driver;      //!< PCI driver data structure.
+unsigned long     paddr;             //!< Physical address of PCI device memory.
+unsigned long     plen;              //!< Length of PCI device memory.
+void             *pcidev_config;     //!< Pointer to mapped device memory.
+unsigned int      mypci_ircount = 0; //!< Interrupt counter (still needed?)
 
-struct cdev       c_dev;
-dev_t             dev_number = 0;
+struct cdev       c_dev;             //!< Character device structure.
+dev_t             dev_number = 0;    //!< Character device number structure.
 
-fifo_t            zpu_io_stdin;
-fifo_t            zpu_io_stdout;
+fifo_t            zpu_io_stdin;      //!< STDIN fifo buffer.
+fifo_t            zpu_io_stdout;     //!< STDOUT fifo buffer.
 
-DECLARE_MUTEX(mutex_w);
-DECLARE_MUTEX(mutex_r);
+DECLARE_MUTEX(mutex_w);              //!< Mutex for exclusive write access.
+DECLARE_MUTEX(mutex_r);              //!< Mutex for exclusive read access.
 
 
 //
-// METHODEN-DEKLARATIONEN
+// METHOD DECLARATIONS
 //
 
 
@@ -61,8 +62,9 @@ DECLARE_MUTEX(mutex_r);
 
 
 //
-// METHODEN-IMPLEMENTIERUNGEN (INITIALISIERUNG UND CLEANUP)
+// METHOD IMPLEMENTATIONS (INITIALIZATION AND CLEANUP)
 //
+
 
 static int __init init(void)
 {
@@ -93,7 +95,7 @@ void __exit cleanup(void)
 
 
 //
-// METHODEN-IMPLEMENTIERUNGEN (PCI-BEZOGEN)
+// METHOD IMPLEMENTATIONS (PCI RELATED)
 //
 
 
