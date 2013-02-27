@@ -1,1 +1,0 @@
-* Beim Auslesen aus dem STDOUT-Fifo dauert es ca. 70 µs, bis das RxV-Bit wieder gesetzt ist.
